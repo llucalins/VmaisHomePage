@@ -57,9 +57,17 @@ const WorkCard = styled(motion.div)`
 const WorkImage = styled.div`
   width: 100%;
   height: 250px;
-  background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+  background: ${props => props.gradient || 'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1)'};
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
 
   &::before {
     content: '';
@@ -68,8 +76,14 @@ const WorkImage = styled.div`
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
-    opacity: 0.8;
+    background: ${props => props.gradient || 'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1)'};
+    opacity: 0.9;
+  }
+
+  .client-name {
+    position: relative;
+    z-index: 2;
+    text-align: center;
   }
 `;
 
@@ -97,6 +111,23 @@ const WorkDescription = styled.p`
   line-height: 1.6;
   color: #666;
   margin-bottom: 20px;
+`;
+
+const WorkTags = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+`;
+
+const Tag = styled.span`
+  background: #f0f0f0;
+  color: #666;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 const ViewButton = styled.button`
@@ -162,8 +193,15 @@ const ModalContent = styled.div`
 const ModalImage = styled.div`
   width: 100%;
   height: 300px;
-  background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1);
+  background: ${props => props.gradient || 'linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1)'};
   border-radius: 8px 8px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 3rem;
+  font-weight: 700;
+  text-transform: uppercase;
 `;
 
 const ModalBody = styled.div`
@@ -201,45 +239,63 @@ const CreativeWork = () => {
   const works = [
     {
       id: 1,
-      agency: "Vmais São Paulo",
-      title: "Campanha Nike - Just Do It",
-      description: "Uma campanha inovadora que revolucionou a forma como a Nike se conecta com seus consumidores através de storytelling emocional.",
-      image: "https://via.placeholder.com/400x250/ff6b6b/ffffff?text=Nike+Campaign"
+      agency: "Vmais Comunicação",
+      client: "Prefeitura de Petrolina",
+      title: "Campanha Institucional",
+      description: "Desenvolvimento de campanha institucional completa para a Prefeitura de Petrolina, incluindo produção de vídeos, gestão de redes sociais e comunicação estratégica para aproximar a gestão municipal da população.",
+      tags: ["Campanha Institucional", "Produção de Vídeo", "Gestão de Redes", "Comunicação Pública"],
+      gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      services: ["Produção Audiovisual", "Gestão de Redes Sociais", "Comunicação Institucional", "Design Gráfico"]
     },
     {
       id: 2,
-      agency: "Vmais Rio de Janeiro",
-      title: "Redesign Coca-Cola",
-      description: "Redesign completo da identidade visual da Coca-Cola, mantendo a essência da marca enquanto moderniza sua presença digital.",
-      image: "https://via.placeholder.com/400x250/4ecdc4/ffffff?text=Coca-Cola+Redesign"
+      agency: "Vmais Comunicação",
+      client: "Influenciadores Locais",
+      title: "Gestão de Redes Sociais",
+      description: "Gestão completa de redes sociais para influenciadores locais, criando estratégias personalizadas que aumentam o engajamento e fortalecem a presença digital dos clientes.",
+      tags: ["Gestão de Redes", "Influenciadores", "Marketing Digital", "Engajamento"],
+      gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+      services: ["Gestão de Redes Sociais", "Criação de Conteúdo", "Estratégia Digital", "Analytics"]
     },
     {
       id: 3,
-      agency: "Vmais Digital",
-      title: "App Spotify - Discover Weekly",
-      description: "Desenvolvimento da estratégia de comunicação digital para o lançamento do Discover Weekly, revolucionando a descoberta de música.",
-      image: "https://via.placeholder.com/400x250/45b7d1/ffffff?text=Spotify+App"
+      agency: "Vmais Comunicação",
+      client: "Empresas Locais",
+      title: "Marketing Digital Completo",
+      description: "Soluções integradas de marketing digital para pequenas e médias empresas da região, incluindo identidade visual, campanhas publicitárias e presença online.",
+      tags: ["Marketing Digital", "Identidade Visual", "Campanhas", "Pequenas Empresas"],
+      gradient: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+      services: ["Branding", "Marketing Digital", "Design Gráfico", "Publicidade"]
     },
     {
       id: 4,
-      agency: "Vmais Creative",
-      title: "Campanha Dove - Real Beauty",
-      description: "Campanha global que redefiniu os padrões de beleza e empoderou mulheres ao redor do mundo.",
-      image: "https://via.placeholder.com/400x250/ff6b6b/ffffff?text=Dove+Campaign"
+      agency: "Vmais Comunicação",
+      client: "Eventos Regionais",
+      title: "Produção de Eventos",
+      description: "Produção audiovisual e comunicação para eventos regionais, capturando momentos especiais e criando conteúdo que gera engajamento e visibilidade.",
+      tags: ["Produção de Eventos", "Audiovisual", "Fotografia", "Vídeo"],
+      gradient: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+      services: ["Produção Audiovisual", "Fotografia", "Edição de Vídeo", "Cobertura de Eventos"]
     },
     {
       id: 5,
-      agency: "Vmais Media",
-      title: "Estratégia Netflix",
-      description: "Planejamento de mídia integrada que transformou a Netflix na principal plataforma de streaming do Brasil.",
-      image: "https://via.placeholder.com/400x250/4ecdc4/ffffff?text=Netflix+Strategy"
+      agency: "Vmais Comunicação",
+      client: "Instituições Públicas",
+      title: "Comunicação Institucional",
+      description: "Desenvolvimento de estratégias de comunicação institucional para órgãos públicos, criando conexão entre governo e cidadãos através de conteúdo relevante e transparente.",
+      tags: ["Comunicação Institucional", "Setor Público", "Transparência", "Cidadania"],
+      gradient: "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+      services: ["Comunicação Institucional", "Produção de Conteúdo", "Gestão de Crises", "Relacionamento com Mídia"]
     },
     {
       id: 6,
-      agency: "Vmais Events",
-      title: "Festival Tomorrowland Brasil",
-      description: "Conceituação e execução completa da comunicação para o maior festival de música eletrônica do Brasil.",
-      image: "https://via.placeholder.com/400x250/45b7d1/ffffff?text=Tomorrowland"
+      agency: "Vmais Comunicação",
+      client: "Pequenos Negócios",
+      title: "Transformação Digital",
+      description: "Acompanhamento completo da transformação digital de pequenos negócios, desde a criação da identidade visual até a implementação de estratégias de marketing digital.",
+      tags: ["Transformação Digital", "Pequenos Negócios", "Inovação", "Crescimento"],
+      gradient: "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
+      services: ["Consultoria Digital", "Branding", "Marketing Digital", "Gestão de Redes Sociais"]
     }
   ];
 
@@ -254,7 +310,7 @@ const CreativeWork = () => {
         >
           <SectionTitle>Nossos Trabalhos Criativos</SectionTitle>
           <SectionSubtitle>
-            Descubra algumas das nossas campanhas mais impactantes que transformaram marcas e conectaram com audiências
+            Descubra alguns dos nossos projetos mais impactantes que transformaram marcas e conectaram com audiências
           </SectionSubtitle>
         </SectionHeader>
 
@@ -269,11 +325,18 @@ const CreativeWork = () => {
               onClick={() => setSelectedWork(work)}
               whileHover={{ scale: 1.02 }}
             >
-              <WorkImage />
+              <WorkImage gradient={work.gradient}>
+                <div className="client-name">{work.client}</div>
+              </WorkImage>
               <WorkContent>
                 <WorkAgency>{work.agency}</WorkAgency>
                 <WorkTitle>{work.title}</WorkTitle>
                 <WorkDescription>{work.description}</WorkDescription>
+                <WorkTags>
+                  {work.tags.map((tag, tagIndex) => (
+                    <Tag key={tagIndex}>{tag}</Tag>
+                  ))}
+                </WorkTags>
                 <ViewButton>Ver Projeto</ViewButton>
               </WorkContent>
             </WorkCard>
@@ -301,11 +364,22 @@ const CreativeWork = () => {
           >
             <CloseButton onClick={() => setSelectedWork(null)}>×</CloseButton>
             <ModalContent onClick={(e) => e.stopPropagation()}>
-              <ModalImage />
+              <ModalImage gradient={selectedWork.gradient}>
+                {selectedWork.client}
+              </ModalImage>
               <ModalBody>
                 <ModalTitle>{selectedWork.title}</ModalTitle>
                 <ModalDescription>{selectedWork.description}</ModalDescription>
+                <p><strong>Cliente:</strong> {selectedWork.client}</p>
                 <p><strong>Agência:</strong> {selectedWork.agency}</p>
+                <div style={{ marginTop: '20px' }}>
+                  <strong>Serviços Prestados:</strong>
+                  <ul style={{ marginTop: '10px', paddingLeft: '20px' }}>
+                    {selectedWork.services.map((service, index) => (
+                      <li key={index} style={{ marginBottom: '5px', color: '#666' }}>{service}</li>
+                    ))}
+                  </ul>
+                </div>
               </ModalBody>
             </ModalContent>
           </Modal>

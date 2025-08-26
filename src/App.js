@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from './components/Header';
 import Hero from './components/Hero';
+import AboutUs from './components/AboutUs';
 import Services from './components/Services';
 import CreativeWork from './components/CreativeWork';
 import Contact from './components/Contact';
@@ -58,6 +59,7 @@ function App() {
           >
             <Header />
             <Hero />
+            <AboutUs />
             <Services />
             <CreativeWork />
             <Contact />
