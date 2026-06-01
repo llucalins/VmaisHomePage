@@ -5,7 +5,7 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import AboutUs from './components/AboutUs';
 import Services from './components/Services';
-import CreativeWork from './components/CreativeWork';
+import CasesResultados from './components/CasesResultados';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 
@@ -61,7 +61,7 @@ function App() {
             <Hero />
             <AboutUs />
             <Services />
-            <CreativeWork />
+            <CasesResultados />
             <Contact />
             <Footer />
           </motion.div>

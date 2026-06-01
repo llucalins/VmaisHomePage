@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
+import TiltedCard from './TiltedCard';
 
 const AboutSection = styled.section`
   padding: 120px 0;
@@ -106,141 +107,81 @@ const VisualContent = styled(motion.div)`
   }
 `;
 
-const TeamImage = styled.div`
-  position: relative;
+const TiltedOverlayCard = styled.div`
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: linear-gradient(135deg, rgba(15, 15, 15, 0.35) 0%, rgba(45, 45, 45, 0.35) 100%);
+  backdrop-filter: blur(1px);
   color: #fff;
-  text-align: center;
-  z-index: 2;
-`;
-
-const LogoContainer = styled.div`
+  padding: 30px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  margin-bottom: 40px;
-`;
-
-const LogoMain = styled.div`
-  font-size: 3.5rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: -2px;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const LetterV = styled.span`
-  font-size: 4rem;
-  margin-right: 4px;
-`;
-
-const LetterA = styled.span`
+  justify-content: space-between;
   position: relative;
-  display: inline-block;
-  
-  &::after {
-    content: '+';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 1.2rem;
-    font-weight: 900;
-    color: #fff;
-    opacity: 0.8;
-  }
+  overflow: hidden;
 `;
 
-const LogoSubtitle = styled.div`
-  font-size: 1rem;
-  font-weight: 300;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  opacity: 0.8;
-`;
-
-const QuoteContainer = styled.div`
-  max-width: 450px;
-  margin: 0 auto;
-  padding: 25px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-`;
-
-const Quote = styled.div`
-  font-size: 1.2rem;
-  font-weight: 400;
-  line-height: 1.6;
-  margin-bottom: 15px;
-  font-style: italic;
-`;
-
-const Author = styled.div`
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  opacity: 0.8;
-`;
-
-const DecorativeElements = styled.div`
-  position: absolute;
-  top: 20px;
-  right: 20px;
+const OverlayTop = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 3;
+  justify-content: space-between;
+  align-items: flex-start;
 `;
 
-const Icon = styled.div`
-  width: 20px;
-  height: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 3px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
-`;
-
-const PurpleAccent = styled.div`
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  width: 40px;
-  height: 40px;
+const OverlayBadge = styled.div`
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
   font-weight: 700;
-  font-size: 1.2rem;
-  z-index: 3;
+  font-size: 1.4rem;
 `;
 
-const BorderFrame = styled.div`
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  right: 20px;
-  bottom: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  pointer-events: none;
-  z-index: 1;
+const OverlayBrand = styled.div`
+  text-align: center;
+  margin-top: 18px;
+`;
+
+const OverlayBrandMain = styled.div`
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -1.5px;
+`;
+
+const OverlayBrandSub = styled.div`
+  margin-top: 14px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  opacity: 0.8;
+  font-size: 1rem;
+`;
+
+const OverlayQuoteBox = styled.div`
+  margin-top: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 26px 30px;
+  text-align: center;
+`;
+
+const OverlayQuote = styled.p`
+  font-size: 1rem;
+  line-height: 1.7;
+  font-style: italic;
+  margin-bottom: 14px;
+`;
+
+const OverlayAuthor = styled.p`
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.85;
 `;
 
 const StatsContainer = styled(motion.div)`
@@ -402,18 +343,6 @@ const AboutUs = () => {
     }
   };
 
-  const logoVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        duration: 1,
-        ease: "easeOut"
-      }
-    }
-  };
-
   return (
     <AboutSection>
       <BackgroundPattern />
@@ -442,43 +371,33 @@ const AboutUs = () => {
             </TextContent>
 
             <VisualContent variants={visualVariants}>
-              <BorderFrame />
-              <PurpleAccent>✓+</PurpleAccent>
-              
-              <DecorativeElements>
-                <Icon>♥</Icon>
-                <Icon>□</Icon>
-                <Icon>👤</Icon>
-                <Icon>🔖</Icon>
-              </DecorativeElements>
-
-              <TeamImage>
-                <div>
-                  <motion.div
-                    variants={logoVariants}
-                    initial="hidden"
-                    animate="visible"
-                  >
-                    <LogoContainer>
-                      <LogoMain>
-                        <LetterV>V</LetterV>
-                        <LetterA>m</LetterA>
-                        <LetterA>a</LetterA>
-                        <LetterA>i</LetterA>
-                        <LetterA>s</LetterA>
-                      </LogoMain>
-                      <LogoSubtitle>Comunicação</LogoSubtitle>
-                    </LogoContainer>
-                  </motion.div>
-                  
-                  <QuoteContainer>
-                    <Quote>
-                      "Marketing não é mais sobre o que você faz, mas sobre a história que você conta."
-                    </Quote>
-                    <Author>Equipe Vmais Comunicação</Author>
-                  </QuoteContainer>
-                </div>
-              </TeamImage>
+              <TiltedCard
+                imageSrc="/Images/file.jpg"
+                altText="Vmais Comunicação"
+                captionText="Vmais Comunicação"
+                containerHeight="500px"
+                containerWidth="100%"
+                imageHeight="500px"
+                imageWidth="100%"
+                rotateAmplitude={10}
+                scaleOnHover={1.03}
+                showMobileWarning={false}
+                showTooltip={false}
+                displayOverlayContent
+                overlayContent={
+                  <TiltedOverlayCard>
+                    <OverlayTop>
+                      <OverlayBadge>V+</OverlayBadge>
+                    </OverlayTop>
+                    <OverlayQuoteBox>
+                      <OverlayQuote>
+                        "Marketing não é mais sobre o que você faz, mas sobre a história que você conta."
+                      </OverlayQuote>
+                      <OverlayAuthor>VALDY LINS</OverlayAuthor>
+                    </OverlayQuoteBox>
+                  </TiltedOverlayCard>
+                }
+              />
             </VisualContent>
           </ContentGrid>
 

@@ -194,12 +194,12 @@ const Header = () => {
   }, []);
 
   const menuItems = [
-    'Quem Somos',
-    'O Que Fazemos',
-    'Trabalhos',
-    'Carreiras',
-    'Sustentabilidade',
-    'Imprensa'
+    'QUEM SOMOS',
+    'SOLUÇÕES',
+    'PORTFÓLIO',
+    'CLIENTES',
+    'CONTEÚDOS',
+    'CONTATO'
   ];
 
   const logoVariants = {
