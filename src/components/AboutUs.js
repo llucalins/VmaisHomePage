@@ -244,29 +244,125 @@ const BorderFrame = styled.div`
 `;
 
 const StatsContainer = styled(motion.div)`
+  position: relative;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
-  margin-top: 60px;
-  padding-top: 60px;
-  border-top: 1px solid #eee;
+  gap: clamp(24px, 5vw, 70px);
+  width: 100vw;
+  margin: 90px 0 -120px calc(50% - 50vw);
+  padding: clamp(52px, 7vw, 82px) max(24px, calc((100vw - 1200px) / 2 + 20px));
+  background: #0f0f0f;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 6px solid #e11d2e;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+
+  &::before,
+  &::after {
+    content: '+';
+    position: absolute;
+    color: rgba(225, 29, 46, 0.12);
+    font-size: clamp(7rem, 16vw, 14rem);
+    font-weight: 900;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  &::before {
+    top: -42px;
+    left: clamp(18px, 6vw, 90px);
+  }
+
+  &::after {
+    right: clamp(18px, 6vw, 90px);
+    bottom: -62px;
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 34px;
+    margin-top: 70px;
+    padding-top: 52px;
+    padding-bottom: 58px;
+  }
 `;
 
 const StatItem = styled.div`
+  position: relative;
+  z-index: 1;
   text-align: center;
   
   .number {
-    font-size: 2.5rem;
-    font-weight: 700;
-    color: #000;
-    margin-bottom: 10px;
+    display: inline-flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 10px;
+    color: #fff;
+    margin-bottom: 14px;
+    line-height: 0.9;
+  }
+
+  .value {
+    font-size: clamp(3.4rem, 6vw, 5.6rem);
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .plus {
+    color: #e11d2e;
+    font-size: clamp(3.5rem, 5.8vw, 6.2rem);
+    font-weight: 900;
+    line-height: 0.72;
+    text-shadow: 0 0 28px rgba(225, 29, 46, 0.52);
+    transform: translateY(0.04em);
   }
   
   .label {
-    font-size: 0.9rem;
+    font-size: clamp(0.8rem, 1.1vw, 0.95rem);
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #666;
+    letter-spacing: 1.8px;
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  &.background-plus {
+    position: absolute;
+    z-index: 0;
+    color: rgba(225, 29, 46, 0.09);
+    font-size: clamp(3.6rem, 8vw, 8.5rem);
+    font-weight: 900;
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  &.background-plus.one {
+    top: 28px;
+    left: 24%;
+  }
+
+  &.background-plus.two {
+    top: 34px;
+    right: 27%;
+    font-size: clamp(2.9rem, 6vw, 6.4rem);
+  }
+
+  &.background-plus.three {
+    left: 43%;
+    bottom: 16px;
+    color: rgba(225, 29, 46, 0.12);
+  }
+
+  &.background-plus.four {
+    left: 10%;
+    bottom: 24px;
+    font-size: clamp(2.8rem, 5vw, 5.6rem);
+  }
+
+  &.background-plus.five {
+    right: 12%;
+    bottom: 26px;
+    font-size: clamp(3rem, 5.5vw, 6rem);
   }
 `;
 
@@ -387,16 +483,21 @@ const AboutUs = () => {
           </ContentGrid>
 
           <StatsContainer variants={itemVariants}>
+            <StatItem as="span" className="background-plus one" aria-hidden="true">+</StatItem>
+            <StatItem as="span" className="background-plus two" aria-hidden="true">+</StatItem>
+            <StatItem as="span" className="background-plus three" aria-hidden="true">+</StatItem>
+            <StatItem as="span" className="background-plus four" aria-hidden="true">+</StatItem>
+            <StatItem as="span" className="background-plus five" aria-hidden="true">+</StatItem>
             <StatItem>
-              <div className="number">100+</div>
+              <div className="number"><span className="value">100</span><span className="plus">+</span></div>
               <div className="label">Projetos Realizados</div>
             </StatItem>
             <StatItem>
-              <div className="number">50+</div>
+              <div className="number"><span className="value">50</span><span className="plus">+</span></div>
               <div className="label">Clientes Satisfeitos</div>
             </StatItem>
             <StatItem>
-              <div className="number">5+</div>
+              <div className="number"><span className="value">5</span><span className="plus">+</span></div>
               <div className="label">Anos de Experiência</div>
             </StatItem>
           </StatsContainer>
