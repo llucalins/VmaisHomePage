@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import AboutUs from './components/AboutUs';
-import Services from './components/Services';
-import CasesResultados from './components/CasesResultados';
-import Contact from './components/Contact';
-import Footer from './components/Footer';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import MarketingPage from './pages/MarketingPage';
+import LoginPage from './pages/LoginPage';
+import AdminPage from './pages/AdminPage';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -57,13 +54,13 @@ function App() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <Header />
-            <Hero />
-            <AboutUs />
-            <Services />
-            <CasesResultados />
-            <Contact />
-            <Footer />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<MarketingPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/admin" element={<AdminPage />} />
+              </Routes>
+            </BrowserRouter>
           </motion.div>
         )}
       </AnimatePresence>
