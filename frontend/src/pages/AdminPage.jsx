@@ -424,6 +424,33 @@ const InlineAction = styled.button`
   width: 100%;
 `;
 
+const RowActions = styled.div`
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+
+  button {
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    padding: 8px 10px;
+  }
+
+  @media (max-width: 760px) {
+    justify-content: flex-start;
+  }
+`;
+
+const SmallEditButton = styled.button`
+  background: #eef1f5;
+  color: #20242a;
+`;
+
+const SmallDangerButton = styled.button`
+  background: #fff1f0;
+  color: #b42318;
+`;
+
 const CalendarGrid = styled.div`
   display: grid;
   grid-template-columns: 52px minmax(280px, 1fr);
@@ -458,8 +485,8 @@ const HourLine = styled.div`
 
 const EventCard = styled.article`
   position: absolute;
-  left: 8px;
-  right: 8px;
+  left: calc(8px + ${({ $lane }) => $lane} * ((100% - 16px) / ${({ $laneCount }) => $laneCount}));
+  width: calc(((100% - 16px) / ${({ $laneCount }) => $laneCount}) - 6px);
   top: ${({ $top }) => $top}px;
   min-height: ${({ $height }) => $height}px;
   border-radius: 8px;
@@ -786,12 +813,64 @@ const timeToTop = (time) => {
   return Math.max(0, (hour * hourHeight) + ((minute || 0) / 60) * hourHeight);
 };
 
+const timeToMinutes = (time) => {
+  if (!time) return 0;
+  const [hour, minute] = time.split(':').map(Number);
+  return (hour * 60) + (minute || 0);
+};
+
 const durationToHeight = (start, end) => {
   if (!start || !end) return 84;
   const [startHour, startMinute] = start.split(':').map(Number);
   const [endHour, endMinute] = end.split(':').map(Number);
   const minutes = ((endHour * 60) + (endMinute || 0)) - ((startHour * 60) + (startMinute || 0));
   return Math.max(64, (minutes / 60) * hourHeight);
+};
+
+const itemTimeRange = (item) => {
+  const start = timeToMinutes(item.startTime);
+  const fallbackEnd = start + 90;
+  const end = item.endTime ? timeToMinutes(item.endTime) : fallbackEnd;
+  return { start, end: Math.max(start + 30, end) };
+};
+
+const layoutCalendarItems = (items) => {
+  const sorted = [...items].sort((a, b) => {
+    const aRange = itemTimeRange(a);
+    const bRange = itemTimeRange(b);
+    return aRange.start - bRange.start || aRange.end - bRange.end;
+  });
+
+  const groups = [];
+  let currentGroup = [];
+  let currentGroupEnd = -1;
+
+  sorted.forEach((item) => {
+    const range = itemTimeRange(item);
+    if (currentGroup.length && range.start >= currentGroupEnd) {
+      groups.push(currentGroup);
+      currentGroup = [];
+      currentGroupEnd = -1;
+    }
+    currentGroup.push({ item, ...range });
+    currentGroupEnd = Math.max(currentGroupEnd, range.end);
+  });
+
+  if (currentGroup.length) {
+    groups.push(currentGroup);
+  }
+
+  return groups.flatMap((group) => {
+    const laneEnds = [];
+    const positioned = group.map((entry) => {
+      const lane = laneEnds.findIndex((end) => entry.start >= end);
+      const nextLane = lane === -1 ? laneEnds.length : lane;
+      laneEnds[nextLane] = entry.end;
+      return { ...entry, lane: nextLane };
+    });
+    const laneCount = laneEnds.length || 1;
+    return positioned.map((entry) => ({ ...entry.item, lane: entry.lane, laneCount }));
+  });
 };
 
 const daysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
@@ -822,6 +901,13 @@ const itemToDesignForm = (item) => ({
   responsibleId: item.responsibleId || ''
 });
 
+const itemToEmployeeForm = (employee) => ({
+  name: employee.name || '',
+  phoneNumber: employee.phoneNumber || '',
+  roleName: employee.roleName || 'Fotografo',
+  active: employee.active ?? true
+});
+
 const AdminPage = () => {
   const navigate = useNavigate();
   const token = authStorage.getToken();
@@ -841,6 +927,14 @@ const AdminPage = () => {
   const [editDesignForm, setEditDesignForm] = useState(initialDesignForm);
   const [showPautaForm, setShowPautaForm] = useState(false);
   const [showDesignForm, setShowDesignForm] = useState(false);
+  const [showEmployeeForm, setShowEmployeeForm] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [editEmployeeForm, setEditEmployeeForm] = useState({
+    name: '',
+    phoneNumber: '',
+    roleName: 'Fotografo',
+    active: true
+  });
   const [draggingDesignId, setDraggingDesignId] = useState(null);
   const [dragOverStatus, setDragOverStatus] = useState(null);
   const [employeeForm, setEmployeeForm] = useState({
@@ -887,6 +981,7 @@ const AdminPage = () => {
   const coverageItems = agendaItems.filter((item) => (item.workType || 'COVERAGE') === 'COVERAGE');
   const designItems = agendaItems.filter((item) => item.workType === 'DESIGN');
   const selectedDateItems = coverageItems.filter((item) => item.eventDate === selectedDate);
+  const positionedDateItems = layoutCalendarItems(selectedDateItems);
   const todayItems = coverageItems.filter((item) => item.eventDate === toIsoDate(new Date()));
   const confirmedCoverageItems = weekItems.filter((item) => item.status === 'IN_PROGRESS');
   const nextItem = [...coverageItems]
@@ -969,6 +1064,16 @@ const AdminPage = () => {
   const closeDesignDetails = () => {
     setSelectedDesign(null);
     setIsEditingDesign(false);
+  };
+
+  const openEmployeeEditor = (employee) => {
+    setSelectedEmployee(employee);
+    setEditEmployeeForm(itemToEmployeeForm(employee));
+  };
+
+  const closeEmployeeModal = () => {
+    setShowEmployeeForm(false);
+    setSelectedEmployee(null);
   };
 
   const changeSelectedMonth = (amount) => {
@@ -1063,6 +1168,25 @@ const AdminPage = () => {
     });
     setEmployees((items) => [...items, created]);
     setEmployeeForm({ name: '', phoneNumber: '', roleName: 'Fotografo', active: true });
+    setShowEmployeeForm(false);
+  };
+
+  const updateEmployee = async (event) => {
+    event.preventDefault();
+    const updated = await apiRequest(`/employees/${selectedEmployee.id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ ...editEmployeeForm, sectorId: null })
+    });
+    setEmployees((items) => items.map((employee) => (employee.id === updated.id ? updated : employee)));
+    closeEmployeeModal();
+  };
+
+  const deleteEmployee = async (employee) => {
+    if (!window.confirm(`Excluir ${employee.name}?`)) {
+      return;
+    }
+    await apiRequest(`/employees/${employee.id}`, { method: 'DELETE' });
+    setEmployees((items) => items.filter((current) => current.id !== employee.id));
   };
 
   const updateStatus = async (item, status) => {
@@ -1118,7 +1242,7 @@ const AdminPage = () => {
 
             <DayColumn style={{ gridColumn: 2 }}>
               {timeSlots.map((hour) => <HourLine key={hour} />)}
-              {selectedDateItems.map((item, index) => {
+              {positionedDateItems.map((item, index) => {
                 const color = item.sectorColor || palette[index % palette.length];
                 const category = item.category || item.sectorName || 'Geral';
                 const assignments = item.assignments || [];
@@ -1130,6 +1254,8 @@ const AdminPage = () => {
                     $color={color}
                     $top={timeToTop(item.startTime)}
                     $height={durationToHeight(item.startTime, item.endTime)}
+                    $lane={item.lane}
+                    $laneCount={item.laneCount}
                     onClick={() => openEventDetails(item)}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter' || event.key === ' ') {
@@ -1619,6 +1745,78 @@ const AdminPage = () => {
     );
   };
 
+  const renderEmployeeFormModal = () => {
+    if (!showEmployeeForm && !selectedEmployee) {
+      return null;
+    }
+
+    const isEditing = Boolean(selectedEmployee);
+    const form = isEditing ? editEmployeeForm : employeeForm;
+    const setForm = isEditing ? setEditEmployeeForm : setEmployeeForm;
+
+    return (
+      <ModalBackdrop onClick={closeEmployeeModal}>
+        <ModalPanel onClick={(event) => event.stopPropagation()}>
+          <ModalHeader>
+            <div>
+              <h2>{isEditing ? 'Editar funcionario' : 'Novo funcionario'}</h2>
+              <p>Equipe operacional</p>
+            </div>
+            <CloseButton type="button" onClick={closeEmployeeModal}>Fechar</CloseButton>
+          </ModalHeader>
+          <form onSubmit={isEditing ? updateEmployee : createEmployee}>
+            <Field>
+              Nome
+              <input
+                required
+                value={form.name}
+                onChange={(event) => setForm({ ...form, name: event.target.value })}
+              />
+            </Field>
+            <Field>
+              WhatsApp
+              <input
+                required
+                value={form.phoneNumber}
+                onChange={(event) => setForm({ ...form, phoneNumber: event.target.value })}
+              />
+            </Field>
+            <FieldGrid>
+              <Field>
+                Funcao
+                <select
+                  value={form.roleName}
+                  onChange={(event) => setForm({ ...form, roleName: event.target.value })}
+                >
+                  <option value="Fotografo">Fotografo</option>
+                  <option value="Videomaker">Videomaker</option>
+                  <option value="Storymaker">Storymaker</option>
+                  <option value="Designer">Designer</option>
+                  <option value="Editor">Editor</option>
+                  <option value="Produtor">Produtor</option>
+                </select>
+              </Field>
+              <Field>
+                Status
+                <select
+                  value={form.active ? 'true' : 'false'}
+                  onChange={(event) => setForm({ ...form, active: event.target.value === 'true' })}
+                >
+                  <option value="true">Ativo</option>
+                  <option value="false">Inativo</option>
+                </select>
+              </Field>
+            </FieldGrid>
+            <ButtonRow>
+              <SecondaryButton type="button" onClick={closeEmployeeModal}>Cancelar</SecondaryButton>
+              <PrimaryButton type="submit">{isEditing ? 'Salvar alteracoes' : 'Salvar funcionario'}</PrimaryButton>
+            </ButtonRow>
+          </form>
+        </ModalPanel>
+      </ModalBackdrop>
+    );
+  };
+
   const renderDesign = () => (
     <BoardLayout>
       <DesignBoard>
@@ -1687,49 +1885,11 @@ const AdminPage = () => {
   );
 
   const renderEquipe = () => (
-    <ListGrid>
-      <LightPanel>
-        <h2>Novo funcionario</h2>
-        <form onSubmit={createEmployee}>
-          <Field>
-            Nome
-            <input
-              required
-              value={employeeForm.name}
-              onChange={(event) => setEmployeeForm({ ...employeeForm, name: event.target.value })}
-            />
-          </Field>
-          <Field>
-            WhatsApp
-            <input
-              required
-              value={employeeForm.phoneNumber}
-              onChange={(event) => setEmployeeForm({ ...employeeForm, phoneNumber: event.target.value })}
-            />
-          </Field>
-          <FieldGrid>
-            <Field>
-              Funcao
-              <select
-                value={employeeForm.roleName}
-                onChange={(event) => setEmployeeForm({ ...employeeForm, roleName: event.target.value })}
-              >
-                <option value="Fotografo">Fotografo</option>
-                <option value="Videomaker">Videomaker</option>
-                <option value="Storymaker">Storymaker</option>
-                <option value="Editor">Editor</option>
-                <option value="Produtor">Produtor</option>
-              </select>
-            </Field>
-          </FieldGrid>
-          <PrimaryButton type="submit">Salvar funcionario</PrimaryButton>
-        </form>
-      </LightPanel>
-
+    <BoardLayout>
       <LightPanel>
         <h2>Equipe cadastrada</h2>
         {employees.length ? employees.map((employee) => (
-          <Row key={employee.id} $columns="1.2fr 1fr 1fr">
+          <Row key={employee.id} $columns="1.2fr 1fr 120px 160px">
             <div>
               <strong>{employee.name}</strong>
               <span>{employee.phoneNumber}</span>
@@ -1739,10 +1899,14 @@ const AdminPage = () => {
               <span>{employee.active ? 'Disponivel' : 'Inativo'}</span>
             </div>
             <Pill>{employee.active ? 'Ativo' : 'Inativo'}</Pill>
+            <RowActions>
+              <SmallEditButton type="button" onClick={() => openEmployeeEditor(employee)}>Editar</SmallEditButton>
+              <SmallDangerButton type="button" onClick={() => deleteEmployee(employee)}>Excluir</SmallDangerButton>
+            </RowActions>
           </Row>
         )) : <Empty>Nenhum funcionario cadastrado.</Empty>}
       </LightPanel>
-    </ListGrid>
+    </BoardLayout>
   );
 
   const monthBase = new Date(`${selectedDate}T00:00:00`);
@@ -1859,6 +2023,9 @@ const AdminPage = () => {
             {activeTab === 'design' && (
               <HeaderAction type="button" onClick={() => setShowDesignForm(true)}>Novo card</HeaderAction>
             )}
+            {activeTab === 'equipe' && (
+              <HeaderAction type="button" onClick={() => setShowEmployeeForm(true)}>Novo funcionario</HeaderAction>
+            )}
           </Header>
           <Content>
             {notice && <Notice>{notice}</Notice>}
@@ -1869,6 +2036,7 @@ const AdminPage = () => {
             {renderDesignDetails()}
             {renderPautaFormModal()}
             {renderDesignFormModal()}
+            {renderEmployeeFormModal()}
           </Content>
         </MainPanel>
       </AppFrame>

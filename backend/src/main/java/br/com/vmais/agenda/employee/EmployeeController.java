@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,6 +32,7 @@ public class EmployeeController {
   @GetMapping
   public List<EmployeeResponse> list() {
     return employees.findAllByOrderByNameAsc().stream()
+        .filter(Employee::isActive)
         .map(EmployeeResponse::from)
         .toList();
   }
@@ -49,6 +51,15 @@ public class EmployeeController {
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Funcionario nao encontrado"));
     apply(employee, request);
     return EmployeeResponse.from(employees.save(employee));
+  }
+
+  @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void delete(@PathVariable UUID id) {
+    Employee employee = employees.findById(id)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Funcionario nao encontrado"));
+    employee.setActive(false);
+    employees.save(employee);
   }
 
   private void apply(Employee employee, EmployeeRequest request) {
