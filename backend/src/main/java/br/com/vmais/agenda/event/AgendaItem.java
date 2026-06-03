@@ -52,6 +52,13 @@ public class AgendaItem {
   @Column(nullable = false, length = 40)
   private Priority priority = Priority.NORMAL;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "work_type", nullable = false, length = 40)
+  private WorkType workType = WorkType.COVERAGE;
+
+  @Column(length = 80)
+  private String category;
+
   @Column(name = "whatsapp_group_name", length = 140)
   private String whatsappGroupName;
 
@@ -151,6 +158,22 @@ public class AgendaItem {
 
   public void setPriority(Priority priority) {
     this.priority = priority;
+  }
+
+  public WorkType getWorkType() {
+    return workType;
+  }
+
+  public void setWorkType(WorkType workType) {
+    this.workType = workType;
+  }
+
+  public String getCategory() {
+    return category;
+  }
+
+  public void setCategory(String category) {
+    this.category = category;
   }
 
   public String getWhatsappGroupName() {

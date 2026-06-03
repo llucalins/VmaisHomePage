@@ -17,6 +17,7 @@ import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,8 +50,8 @@ public class AgendaItemController {
   public List<AgendaItemResponse> list(
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-    LocalDate start = from == null ? LocalDate.now().minusDays(7) : from;
-    LocalDate end = to == null ? LocalDate.now().plusDays(30) : to;
+    LocalDate start = from == null ? LocalDate.now().minusDays(30) : from;
+    LocalDate end = to == null ? LocalDate.now().plusDays(365) : to;
     return agendaItems.findByEventDateBetweenOrderByEventDateAscStartTimeAsc(start, end).stream()
         .map(AgendaItemResponse::from)
         .toList();
@@ -83,6 +84,15 @@ public class AgendaItemController {
     return AgendaItemResponse.from(agendaItems.save(item));
   }
 
+  @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  public void delete(@PathVariable UUID id) {
+    if (!agendaItems.existsById(id)) {
+      throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Item de agenda nao encontrado");
+    }
+    agendaItems.deleteById(id);
+  }
+
   private void apply(AgendaItem item, AgendaItemRequest request) {
     Sector sector = request.sectorId() == null ? null : sectors.findById(request.sectorId())
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Setor nao encontrado"));
@@ -96,6 +106,8 @@ public class AgendaItemController {
     item.setEndTime(request.endTime());
     item.setStatus(request.status() == null ? AgendaStatus.TODO : request.status());
     item.setPriority(request.priority() == null ? Priority.NORMAL : request.priority());
+    item.setWorkType(request.workType() == null ? WorkType.COVERAGE : request.workType());
+    item.setCategory(request.category() == null || request.category().isBlank() ? null : request.category().trim());
     item.setWhatsappGroupName(request.whatsappGroupName());
     item.setReminderMinutesBefore(request.reminderMinutesBefore());
     item.setSector(sector);
@@ -127,6 +139,8 @@ public class AgendaItemController {
       LocalTime endTime,
       AgendaStatus status,
       Priority priority,
+      WorkType workType,
+      String category,
       UUID sectorId,
       UUID responsibleId,
       String whatsappGroupName,
@@ -156,6 +170,8 @@ public class AgendaItemController {
       LocalTime endTime,
       AgendaStatus status,
       Priority priority,
+      WorkType workType,
+      String category,
       UUID sectorId,
       String sectorName,
       String sectorColor,
@@ -176,6 +192,8 @@ public class AgendaItemController {
           item.getEndTime(),
           item.getStatus(),
           item.getPriority(),
+          item.getWorkType(),
+          item.getCategory(),
           sector == null ? null : sector.getId(),
           sector == null ? null : sector.getName(),
           sector == null ? null : sector.getColor(),

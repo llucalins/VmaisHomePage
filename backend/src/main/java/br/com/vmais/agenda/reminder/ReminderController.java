@@ -35,9 +35,9 @@ public class ReminderController {
         item.getEventDate(),
         item.getStartTime() == null ? java.time.LocalTime.MIN : item.getStartTime());
     LocalDateTime reminderAt = eventAt.minusMinutes(item.getReminderMinutesBefore());
-    String sector = item.getSector() == null ? "Geral" : item.getSector().getName();
+    String category = item.getCategory() == null || item.getCategory().isBlank() ? "Geral" : item.getCategory();
     String responsible = item.getResponsible() == null ? "Sem responsavel" : item.getResponsible().getName();
-    String message = "%s: %s em %s. Responsavel: %s.".formatted(sector, item.getTitle(), eventAt, responsible);
+    String message = "%s: %s em %s. Responsavel: %s.".formatted(category, item.getTitle(), eventAt, responsible);
 
     return new ReminderPreview(item.getId().toString(), reminderAt, item.getWhatsappGroupName(), message);
   }

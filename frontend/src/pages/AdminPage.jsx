@@ -24,8 +24,18 @@ const priorityLabels = {
   URGENT: 'Urgente'
 };
 
+const designColumns = [
+  ['TODO', 'Backlog'],
+  ['IN_PROGRESS', 'Em producao'],
+  ['WAITING', 'Aguardando'],
+  ['DONE', 'Finalizado']
+];
+
+const coverageCategories = ['Evento', 'Sessao', 'Institucional', 'Entrevista', 'Materia', 'Externa'];
+const designCategories = ['Feed', 'Stories', 'Cartaz', 'Outdoor', 'Identidade', 'Video curto'];
 const palette = ['#b7dcff', '#a7efbd', '#ffd978', '#f4a8ca', '#b8a8ff', '#bff1f2'];
-const timeSlots = Array.from({ length: 13 }, (_, index) => index + 6);
+const hourHeight = 56;
+const timeSlots = Array.from({ length: 24 }, (_, index) => index);
 
 const Page = styled.main`
   min-height: 100vh;
@@ -43,14 +53,32 @@ const Page = styled.main`
 
 const AppFrame = styled.div`
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: ${({ $withSidebar }) => $withSidebar ? '300px minmax(0, 1fr)' : 'minmax(0, 1fr)'};
   gap: 18px;
-  min-height: calc(100vh - 56px);
   max-width: 1500px;
   margin: 0 auto;
 
   @media (max-width: 1080px) {
     grid-template-columns: 1fr;
+  }
+`;
+
+const TopBar = styled.header`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  max-width: 1500px;
+  margin: 0 auto 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(15, 17, 19, 0.92);
+  color: #fff;
+  padding: 16px 18px;
+
+  @media (max-width: 1080px) {
+    align-items: stretch;
+    flex-direction: column;
   }
 `;
 
@@ -104,6 +132,32 @@ const IconButton = styled.button`
   padding: 9px 12px;
 `;
 
+const MiniHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+
+  h2 {
+    margin-bottom: 0;
+  }
+`;
+
+const MiniNav = styled.div`
+  display: flex;
+  gap: 6px;
+
+  button {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-weight: 900;
+  }
+`;
+
 const DarkPanel = styled.section`
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px;
@@ -128,6 +182,10 @@ const MiniMonth = styled.div`
   }
 `;
 
+const MiniBlank = styled.div`
+  aspect-ratio: 1;
+`;
+
 const MiniDay = styled.button`
   aspect-ratio: 1;
   border-radius: 8px;
@@ -148,6 +206,23 @@ const Stat = styled.div`
 
   span {
     color: rgba(255, 255, 255, 0.62);
+  }
+`;
+
+const CardMeta = styled.div`
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 10px;
+
+  span {
+    color: rgba(23, 25, 29, 0.62);
+    font-size: 0.78rem;
+  }
+
+  strong {
+    color: #17191d;
+    font-size: 0.84rem;
   }
 `;
 
@@ -203,18 +278,31 @@ const Header = styled.header`
   }
 `;
 
-const Tabs = styled.nav`
+const SidebarNav = styled.nav`
   display: flex;
+  justify-content: center;
   gap: 8px;
+  flex: 1;
   flex-wrap: wrap;
 `;
 
-const TabButton = styled.button`
+const SidebarNavButton = styled.button`
+  width: min(190px, 100%);
+  border: 1px solid ${({ $active }) => $active ? 'rgba(255,255,255,0.38)' : 'rgba(255,255,255,0.08)'};
   border-radius: 8px;
-  background: ${({ $active }) => $active ? '#111' : '#f0f2f5'};
-  color: ${({ $active }) => $active ? '#fff' : '#20242a'};
-  font-weight: 700;
-  padding: 10px 16px;
+  background: ${({ $active }) => $active ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.04)'};
+  color: #fff;
+  font-weight: 800;
+  padding: 12px 14px;
+  text-align: left;
+
+  span {
+    display: block;
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 0.78rem;
+    font-weight: 500;
+    margin-top: 3px;
+  }
 `;
 
 const Content = styled.div`
@@ -251,22 +339,97 @@ const DayButton = styled.button`
 `;
 
 const CalendarLayout = styled.div`
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 330px;
-  gap: 18px;
-  align-items: start;
+  display: block;
+`;
 
-  @media (max-width: 1180px) {
-    grid-template-columns: 1fr;
+const BoardLayout = styled.div`
+  padding-top: 20px;
+`;
+
+const DesignBoard = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+`;
+
+const BoardColumn = styled.section`
+  min-height: 620px;
+  border: 1px solid #dde3ea;
+  border-radius: 8px;
+  background: ${({ $active }) => $active ? '#e3edf8' : '#eef1f5'};
+  padding: 12px;
+  transition: background 160ms ease, border-color 160ms ease;
+
+  ${({ $active }) => $active && `
+    border-color: #9ecbf4;
+  `}
+
+  h2 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.88rem;
+    margin-bottom: 12px;
+    text-transform: uppercase;
   }
+`;
+
+const DesignCard = styled.article`
+  border: 1px solid #e0e5eb;
+  border-radius: 8px;
+  background: ${({ $color }) => $color || '#fff'};
+  box-shadow: 0 12px 28px rgba(18, 21, 24, 0.08);
+  color: #17191d;
+  cursor: grab;
+  margin-bottom: 10px;
+  opacity: ${({ $dragging }) => $dragging ? 0.54 : 1};
+  padding: 14px;
+  transition: opacity 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+
+  &:active {
+    cursor: grabbing;
+    transform: scale(0.99);
+  }
+
+  h3 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+  }
+
+  p {
+    color: #4f5965;
+    font-size: 0.88rem;
+    margin-bottom: 12px;
+  }
+`;
+
+const CardPills = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+`;
+
+const InlineAction = styled.button`
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.66);
+  color: #20242a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  margin-top: 12px;
+  padding: 8px 10px;
+  width: 100%;
 `;
 
 const CalendarGrid = styled.div`
   display: grid;
-  grid-template-columns: 52px repeat(7, minmax(112px, 1fr));
-  grid-template-rows: repeat(${timeSlots.length}, 64px);
+  grid-template-columns: 52px minmax(280px, 1fr);
+  grid-template-rows: repeat(${timeSlots.length}, ${hourHeight}px);
   gap: 1px 8px;
-  min-width: 860px;
+  min-width: 520px;
   overflow: hidden;
 `;
 
@@ -285,10 +448,11 @@ const DayColumn = styled.div`
   position: relative;
   grid-row: 1 / span ${timeSlots.length};
   border-left: 1px solid #e3e7ec;
+  border-right: 1px solid #e3e7ec;
 `;
 
 const HourLine = styled.div`
-  height: 64px;
+  height: ${hourHeight}px;
   border-top: 1px solid #e3e7ec;
 `;
 
@@ -304,6 +468,7 @@ const EventCard = styled.article`
   padding: 10px;
   overflow: hidden;
   box-shadow: 0 10px 20px rgba(18, 21, 24, 0.08);
+  cursor: pointer;
 
   h3 {
     font-size: 0.84rem;
@@ -396,6 +561,43 @@ const PrimaryButton = styled.button`
   }
 `;
 
+const HeaderAction = styled(PrimaryButton)`
+  width: auto;
+  min-width: 150px;
+  padding: 11px 16px;
+`;
+
+const SecondaryButton = styled.button`
+  width: 100%;
+  border: 1px solid #d9dee5;
+  border-radius: 8px;
+  background: #fff;
+  color: #20242a;
+  font-weight: 800;
+  padding: 12px 14px;
+`;
+
+const CloseButton = styled(SecondaryButton)`
+  width: auto;
+  padding: 9px 12px;
+`;
+
+const DangerButton = styled(SecondaryButton)`
+  border-color: #f0b8b4;
+  color: #b42318;
+`;
+
+const ButtonRow = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+
+  @media (max-width: 620px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
 const ListGrid = styled.div`
   display: grid;
   grid-template-columns: minmax(330px, 420px) minmax(0, 1fr);
@@ -470,20 +672,91 @@ const Empty = styled.div`
   padding: 22px 0;
 `;
 
+const ModalBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgba(11, 12, 14, 0.58);
+  padding: 18px;
+`;
+
+const ModalPanel = styled.section`
+  width: min(620px, 100%);
+  max-height: min(760px, calc(100vh - 36px));
+  overflow: auto;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.28);
+  padding: 22px;
+`;
+
+const ModalHeader = styled.header`
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+
+  h2 {
+    font-size: 1.35rem;
+  }
+
+  p {
+    color: #68707a;
+    margin-top: 4px;
+  }
+`;
+
+const DetailGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+
+  @media (max-width: 620px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const DetailItem = styled.div`
+  border: 1px solid #e1e5eb;
+  border-radius: 8px;
+  background: #f7f8fa;
+  padding: 12px;
+
+  span {
+    display: block;
+    color: #68707a;
+    font-size: 0.76rem;
+    font-weight: 800;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+`;
+
 const initialPautaForm = {
   title: '',
   description: '',
   eventDate: new Date().toISOString().slice(0, 10),
   startTime: '09:00',
-  endTime: '',
   status: 'IN_PROGRESS',
-  priority: 'NORMAL',
-  sectorId: '',
-  whatsappGroupName: '',
+  category: 'Evento',
   reminderMinutesBefore: 60,
   photographerId: '',
   videomakerId: '',
   storymakerId: ''
+};
+
+const initialDesignForm = {
+  title: '',
+  description: '',
+  eventDate: new Date().toISOString().slice(0, 10),
+  status: 'TODO',
+  priority: 'NORMAL',
+  category: 'Feed',
+  responsibleId: ''
 };
 
 const toIsoDate = (date) => date.toISOString().slice(0, 10);
@@ -499,8 +772,6 @@ const getMonday = (value) => {
   return date;
 };
 
-const getAssignment = (item, role) => item.assignments?.find((current) => current.coverageRole === role);
-
 const initials = (name = '') => name
   .split(' ')
   .filter(Boolean)
@@ -512,46 +783,80 @@ const initials = (name = '') => name
 const timeToTop = (time) => {
   if (!time) return 0;
   const [hour, minute] = time.split(':').map(Number);
-  return Math.max(0, ((hour - 6) * 64) + ((minute || 0) / 60) * 64);
+  return Math.max(0, (hour * hourHeight) + ((minute || 0) / 60) * hourHeight);
 };
 
 const durationToHeight = (start, end) => {
-  if (!start || !end) return 96;
+  if (!start || !end) return 84;
   const [startHour, startMinute] = start.split(':').map(Number);
   const [endHour, endMinute] = end.split(':').map(Number);
   const minutes = ((endHour * 60) + (endMinute || 0)) - ((startHour * 60) + (startMinute || 0));
-  return Math.max(72, (minutes / 60) * 64);
+  return Math.max(64, (minutes / 60) * hourHeight);
 };
+
+const daysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+
+const getAssignmentEmployeeId = (item, role) =>
+  item.assignments?.find((assignment) => assignment.coverageRole === role)?.employeeId || '';
+
+const itemToPautaForm = (item) => ({
+  title: item.title || '',
+  description: item.description || '',
+  eventDate: item.eventDate,
+  startTime: formatTime(item.startTime) || '09:00',
+  status: item.status || 'IN_PROGRESS',
+  category: item.category || item.sectorName || 'Evento',
+  reminderMinutesBefore: item.reminderMinutesBefore ?? 60,
+  photographerId: getAssignmentEmployeeId(item, 'PHOTOGRAPHER'),
+  videomakerId: getAssignmentEmployeeId(item, 'VIDEOMAKER'),
+  storymakerId: getAssignmentEmployeeId(item, 'STORYMAKER')
+});
+
+const itemToDesignForm = (item) => ({
+  title: item.title || '',
+  description: item.description || '',
+  eventDate: item.eventDate,
+  status: item.status || 'TODO',
+  priority: item.priority || 'NORMAL',
+  category: item.category || item.sectorName || 'Feed',
+  responsibleId: item.responsibleId || ''
+});
 
 const AdminPage = () => {
   const navigate = useNavigate();
   const token = authStorage.getToken();
   const admin = authStorage.getAdmin();
   const [agendaItems, setAgendaItems] = useState([]);
-  const [sectors, setSectors] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [activeTab, setActiveTab] = useState('agenda');
   const [selectedDate, setSelectedDate] = useState(toIsoDate(new Date()));
   const [notice, setNotice] = useState('');
   const [pautaForm, setPautaForm] = useState(initialPautaForm);
-  const [sectorForm, setSectorForm] = useState({ name: '', color: '#e23d32', active: true });
+  const [designForm, setDesignForm] = useState(initialDesignForm);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isEditingEvent, setIsEditingEvent] = useState(false);
+  const [editPautaForm, setEditPautaForm] = useState(initialPautaForm);
+  const [selectedDesign, setSelectedDesign] = useState(null);
+  const [isEditingDesign, setIsEditingDesign] = useState(false);
+  const [editDesignForm, setEditDesignForm] = useState(initialDesignForm);
+  const [showPautaForm, setShowPautaForm] = useState(false);
+  const [showDesignForm, setShowDesignForm] = useState(false);
+  const [draggingDesignId, setDraggingDesignId] = useState(null);
+  const [dragOverStatus, setDragOverStatus] = useState(null);
   const [employeeForm, setEmployeeForm] = useState({
     name: '',
     phoneNumber: '',
     roleName: 'Fotografo',
-    sectorId: '',
     active: true
   });
 
   const loadData = async () => {
     try {
-      const [items, sectorList, employeeList] = await Promise.all([
+      const [items, employeeList] = await Promise.all([
         apiRequest('/agenda-items'),
-        apiRequest('/sectors'),
         apiRequest('/employees')
       ]);
       setAgendaItems(items);
-      setSectors(sectorList);
       setEmployees(employeeList);
       setNotice('');
     } catch (error) {
@@ -576,12 +881,16 @@ const AdminPage = () => {
 
   const weekItems = useMemo(() => {
     const days = new Set(weekDays.map(toIsoDate));
-    return agendaItems.filter((item) => days.has(item.eventDate));
+    return agendaItems.filter((item) => (item.workType || 'COVERAGE') === 'COVERAGE' && days.has(item.eventDate));
   }, [agendaItems, weekDays]);
 
-  const todayItems = agendaItems.filter((item) => item.eventDate === toIsoDate(new Date()));
-  const nextItem = [...agendaItems]
-    .filter((item) => `${item.eventDate}T${item.startTime || '00:00'}` >= new Date().toISOString().slice(0, 16))
+  const coverageItems = agendaItems.filter((item) => (item.workType || 'COVERAGE') === 'COVERAGE');
+  const designItems = agendaItems.filter((item) => item.workType === 'DESIGN');
+  const selectedDateItems = coverageItems.filter((item) => item.eventDate === selectedDate);
+  const todayItems = coverageItems.filter((item) => item.eventDate === toIsoDate(new Date()));
+  const confirmedCoverageItems = weekItems.filter((item) => item.status === 'IN_PROGRESS');
+  const nextItem = [...coverageItems]
+    .filter((item) => new Date(`${item.eventDate}T${item.startTime || '00:00'}`) >= new Date())
     .sort((a, b) => `${a.eventDate}${a.startTime || ''}`.localeCompare(`${b.eventDate}${b.startTime || ''}`))[0];
 
   if (!token) {
@@ -593,59 +902,167 @@ const AdminPage = () => {
     navigate('/login');
   };
 
-  const countForDay = (date) => agendaItems.filter((item) => item.eventDate === toIsoDate(date)).length;
+  const countForDay = (date) => coverageItems.filter((item) => item.eventDate === toIsoDate(date)).length;
 
-  const buildAssignments = () => [
-    [pautaForm.photographerId, 'PHOTOGRAPHER'],
-    [pautaForm.videomakerId, 'VIDEOMAKER'],
-    [pautaForm.storymakerId, 'STORYMAKER']
+  const buildAssignments = (form) => [
+    [form.photographerId, 'PHOTOGRAPHER'],
+    [form.videomakerId, 'VIDEOMAKER'],
+    [form.storymakerId, 'STORYMAKER']
   ]
     .filter(([employeeId]) => employeeId)
     .map(([employeeId, coverageRole]) => ({ employeeId, coverageRole }));
 
+  const buildPautaPayload = (form) => {
+    const assignments = buildAssignments(form);
+    return {
+      title: form.title,
+      description: form.description,
+      eventDate: form.eventDate,
+      startTime: form.startTime || null,
+      endTime: null,
+      status: form.status,
+      priority: 'NORMAL',
+      workType: 'COVERAGE',
+      category: form.category,
+      sectorId: null,
+      responsibleId: assignments[0]?.employeeId || null,
+      whatsappGroupName: '',
+      reminderMinutesBefore: Number(form.reminderMinutesBefore),
+      assignments
+    };
+  };
+
+  const buildDesignPayload = (form) => ({
+    title: form.title,
+    description: form.description,
+    eventDate: form.eventDate,
+    startTime: null,
+    endTime: null,
+    status: form.status,
+    priority: form.priority,
+    workType: 'DESIGN',
+    category: form.category,
+    sectorId: null,
+    responsibleId: form.responsibleId || null,
+    whatsappGroupName: '',
+    reminderMinutesBefore: 0,
+    assignments: []
+  });
+
+  const openEventDetails = (item) => {
+    setSelectedEvent(item);
+    setEditPautaForm(itemToPautaForm(item));
+    setIsEditingEvent(false);
+  };
+
+  const closeEventDetails = () => {
+    setSelectedEvent(null);
+    setIsEditingEvent(false);
+  };
+
+  const openDesignDetails = (item) => {
+    setSelectedDesign(item);
+    setEditDesignForm(itemToDesignForm(item));
+    setIsEditingDesign(false);
+  };
+
+  const closeDesignDetails = () => {
+    setSelectedDesign(null);
+    setIsEditingDesign(false);
+  };
+
+  const changeSelectedMonth = (amount) => {
+    const date = new Date(`${selectedDate}T00:00:00`);
+    const currentDay = date.getDate();
+    date.setDate(1);
+    date.setMonth(date.getMonth() + amount);
+    date.setDate(Math.min(currentDay, daysInMonth(date)));
+    setSelectedDate(toIsoDate(date));
+  };
+
+  const changeSelectedYear = (amount) => {
+    const date = new Date(`${selectedDate}T00:00:00`);
+    const currentDay = date.getDate();
+    date.setDate(1);
+    date.setFullYear(date.getFullYear() + amount);
+    date.setDate(Math.min(currentDay, daysInMonth(date)));
+    setSelectedDate(toIsoDate(date));
+  };
+
   const createPauta = async (event) => {
     event.preventDefault();
-    const assignments = buildAssignments();
     const created = await apiRequest('/agenda-items', {
       method: 'POST',
-      body: JSON.stringify({
-        title: pautaForm.title,
-        description: pautaForm.description,
-        eventDate: pautaForm.eventDate,
-        startTime: pautaForm.startTime || null,
-        endTime: pautaForm.endTime || null,
-        status: pautaForm.status,
-        priority: pautaForm.priority,
-        sectorId: pautaForm.sectorId || null,
-        responsibleId: assignments[0]?.employeeId || null,
-        whatsappGroupName: pautaForm.whatsappGroupName,
-        reminderMinutesBefore: Number(pautaForm.reminderMinutesBefore),
-        assignments
-      })
+      body: JSON.stringify(buildPautaPayload(pautaForm))
     });
     setAgendaItems((items) => [...items, created]);
     setSelectedDate(created.eventDate);
     setPautaForm({ ...initialPautaForm, eventDate: created.eventDate });
+    setShowPautaForm(false);
   };
 
-  const createSector = async (event) => {
+  const updatePauta = async (event) => {
     event.preventDefault();
-    const created = await apiRequest('/sectors', {
-      method: 'POST',
-      body: JSON.stringify(sectorForm)
+    const updated = await apiRequest(`/agenda-items/${selectedEvent.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(buildPautaPayload(editPautaForm))
     });
-    setSectors((items) => [...items, created]);
-    setSectorForm({ name: '', color: '#e23d32', active: true });
+    setAgendaItems((items) => items.map((item) => (item.id === updated.id ? updated : item)));
+    setSelectedEvent(updated);
+    setEditPautaForm(itemToPautaForm(updated));
+    setSelectedDate(updated.eventDate);
+    setIsEditingEvent(false);
+  };
+
+  const deletePauta = async () => {
+    if (!selectedEvent || !window.confirm('Excluir esta pauta?')) {
+      return;
+    }
+    await apiRequest(`/agenda-items/${selectedEvent.id}`, { method: 'DELETE' });
+    setAgendaItems((items) => items.filter((item) => item.id !== selectedEvent.id));
+    closeEventDetails();
+  };
+
+  const createDesignTask = async (event) => {
+    event.preventDefault();
+    const created = await apiRequest('/agenda-items', {
+      method: 'POST',
+      body: JSON.stringify(buildDesignPayload(designForm))
+    });
+    setAgendaItems((items) => [...items, created]);
+    setDesignForm({ ...initialDesignForm, eventDate: created.eventDate });
+    setShowDesignForm(false);
+  };
+
+  const updateDesignTask = async (event) => {
+    event.preventDefault();
+    const updated = await apiRequest(`/agenda-items/${selectedDesign.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(buildDesignPayload(editDesignForm))
+    });
+    setAgendaItems((items) => items.map((item) => (item.id === updated.id ? updated : item)));
+    setSelectedDesign(updated);
+    setEditDesignForm(itemToDesignForm(updated));
+    setIsEditingDesign(false);
+  };
+
+  const deleteDesignTask = async () => {
+    if (!selectedDesign || !window.confirm('Excluir este card de design?')) {
+      return;
+    }
+    await apiRequest(`/agenda-items/${selectedDesign.id}`, { method: 'DELETE' });
+    setAgendaItems((items) => items.filter((item) => item.id !== selectedDesign.id));
+    closeDesignDetails();
   };
 
   const createEmployee = async (event) => {
     event.preventDefault();
     const created = await apiRequest('/employees', {
       method: 'POST',
-      body: JSON.stringify({ ...employeeForm, sectorId: employeeForm.sectorId || null })
+      body: JSON.stringify({ ...employeeForm, sectorId: null })
     });
     setEmployees((items) => [...items, created]);
-    setEmployeeForm({ name: '', phoneNumber: '', roleName: 'Fotografo', sectorId: '', active: true });
+    setEmployeeForm({ name: '', phoneNumber: '', roleName: 'Fotografo', active: true });
   };
 
   const updateStatus = async (item, status) => {
@@ -654,6 +1071,24 @@ const AdminPage = () => {
       body: JSON.stringify({ status })
     });
     setAgendaItems((items) => items.map((current) => (current.id === updated.id ? updated : current)));
+  };
+
+  const startDesignDrag = (event, item) => {
+    setDraggingDesignId(item.id);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', item.id);
+  };
+
+  const dropDesignCard = async (event, status) => {
+    event.preventDefault();
+    const itemId = event.dataTransfer.getData('text/plain') || draggingDesignId;
+    const item = designItems.find((current) => current.id === itemId);
+    setDraggingDesignId(null);
+    setDragOverStatus(null);
+    if (!item || item.status === status) {
+      return;
+    }
+    await updateStatus(item, status);
   };
 
   const renderAgenda = () => (
@@ -676,46 +1111,218 @@ const AdminPage = () => {
         <CalendarScroller>
           <CalendarGrid>
             {timeSlots.map((hour) => (
-              <TimeCell key={hour} style={{ gridColumn: 1, gridRow: hour - 5 }}>
-                {hour}:00
+              <TimeCell key={hour} style={{ gridColumn: 1, gridRow: hour + 1 }}>
+                {String(hour).padStart(2, '0')}:00
               </TimeCell>
             ))}
 
-            {weekDays.map((date, dayIndex) => {
-              const iso = toIsoDate(date);
-              const items = weekItems.filter((item) => item.eventDate === iso);
-              return (
-                <DayColumn key={iso} style={{ gridColumn: dayIndex + 2 }}>
-                  {timeSlots.map((hour) => <HourLine key={hour} />)}
-                  {items.map((item, index) => {
-                    const color = item.sectorColor || palette[index % palette.length];
-                    const assignments = item.assignments || [];
-                    return (
-                      <EventCard
-                        key={item.id}
-                        $color={color}
-                        $top={timeToTop(item.startTime)}
-                        $height={durationToHeight(item.startTime, item.endTime)}
-                      >
-                        <h3>{item.title}</h3>
-                        <span>{formatTime(item.startTime) || '--:--'} {item.endTime ? `- ${formatTime(item.endTime)}` : ''}</span>
-                        <span>{item.sectorName || 'Geral'}</span>
-                        <People>
-                          {assignments.slice(0, 3).map((assignment) => (
-                            <i key={`${item.id}-${assignment.coverageRole}`}>{initials(assignment.employeeName)}</i>
-                          ))}
-                        </People>
-                      </EventCard>
-                    );
-                  })}
-                </DayColumn>
-              );
-            })}
+            <DayColumn style={{ gridColumn: 2 }}>
+              {timeSlots.map((hour) => <HourLine key={hour} />)}
+              {selectedDateItems.map((item, index) => {
+                const color = item.sectorColor || palette[index % palette.length];
+                const category = item.category || item.sectorName || 'Geral';
+                const assignments = item.assignments || [];
+                return (
+                  <EventCard
+                    key={item.id}
+                    role="button"
+                    tabIndex={0}
+                    $color={color}
+                    $top={timeToTop(item.startTime)}
+                    $height={durationToHeight(item.startTime, item.endTime)}
+                    onClick={() => openEventDetails(item)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        openEventDetails(item);
+                      }
+                    }}
+                  >
+                    <h3>{item.title}</h3>
+                    <span>{formatTime(item.startTime) || '--:--'} {item.endTime ? `- ${formatTime(item.endTime)}` : ''}</span>
+                    <span>{category}</span>
+                    <People>
+                      {assignments.slice(0, 3).map((assignment) => (
+                        <i key={`${item.id}-${assignment.coverageRole}`}>{initials(assignment.employeeName)}</i>
+                      ))}
+                    </People>
+                  </EventCard>
+                );
+              })}
+            </DayColumn>
           </CalendarGrid>
         </CalendarScroller>
 
-        <FormPanel>
-          <h2>Nova pauta</h2>
+      </CalendarLayout>
+    </>
+  );
+
+  const renderEventDetails = () => {
+    if (!selectedEvent) {
+      return null;
+    }
+
+    const category = selectedEvent.category || selectedEvent.sectorName || 'Geral';
+    const assignments = selectedEvent.assignments || [];
+
+    return (
+      <ModalBackdrop onClick={closeEventDetails}>
+        <ModalPanel onClick={(event) => event.stopPropagation()}>
+          <ModalHeader>
+            <div>
+              <h2>{isEditingEvent ? 'Editar pauta' : selectedEvent.title}</h2>
+              <p>
+                {new Date(`${selectedEvent.eventDate}T00:00:00`).toLocaleDateString('pt-BR')}
+                {' as '}
+                {formatTime(selectedEvent.startTime) || '--:--'}
+              </p>
+            </div>
+            <CloseButton type="button" onClick={closeEventDetails}>Fechar</CloseButton>
+          </ModalHeader>
+
+          {isEditingEvent ? (
+            <form onSubmit={updatePauta}>
+              <Field>
+                Titulo
+                <input
+                  required
+                  value={editPautaForm.title}
+                  onChange={(event) => setEditPautaForm({ ...editPautaForm, title: event.target.value })}
+                />
+              </Field>
+              <FieldGrid>
+                <Field>
+                  Data
+                  <input
+                    required
+                    type="date"
+                    value={editPautaForm.eventDate}
+                    onChange={(event) => setEditPautaForm({ ...editPautaForm, eventDate: event.target.value })}
+                  />
+                </Field>
+                <Field>
+                  Inicio
+                  <input
+                    type="time"
+                    value={editPautaForm.startTime}
+                    onChange={(event) => setEditPautaForm({ ...editPautaForm, startTime: event.target.value })}
+                  />
+                </Field>
+                <Field>
+                  Tipo de pauta
+                  <select
+                    value={editPautaForm.category}
+                    onChange={(event) => setEditPautaForm({ ...editPautaForm, category: event.target.value })}
+                  >
+                    {coverageCategories.map((currentCategory) => (
+                      <option key={currentCategory} value={currentCategory}>{currentCategory}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field>
+                  Status
+                  <select
+                    value={editPautaForm.status}
+                    onChange={(event) => setEditPautaForm({ ...editPautaForm, status: event.target.value })}
+                  >
+                    {Object.entries(statusLabels).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </Field>
+              </FieldGrid>
+              <Field>
+                Descricao
+                <textarea
+                  value={editPautaForm.description}
+                  onChange={(event) => setEditPautaForm({ ...editPautaForm, description: event.target.value })}
+                />
+              </Field>
+              {Object.entries(roleLabels).map(([role, label]) => {
+                const key = role === 'PHOTOGRAPHER' ? 'photographerId' : role === 'VIDEOMAKER' ? 'videomakerId' : 'storymakerId';
+                return (
+                  <Field key={role}>
+                    {label}
+                    <select
+                      value={editPautaForm[key]}
+                      onChange={(event) => setEditPautaForm({ ...editPautaForm, [key]: event.target.value })}
+                    >
+                      <option value="">Nao escalado</option>
+                      {employees.map((employee) => (
+                        <option key={employee.id} value={employee.id}>{employee.name}</option>
+                      ))}
+                    </select>
+                  </Field>
+                );
+              })}
+              <ButtonRow>
+                <SecondaryButton type="button" onClick={() => setIsEditingEvent(false)}>Cancelar</SecondaryButton>
+                <PrimaryButton type="submit">Salvar alteracoes</PrimaryButton>
+              </ButtonRow>
+            </form>
+          ) : (
+            <>
+              <DetailGrid>
+                <DetailItem>
+                  <span>Tipo</span>
+                  <strong>{category}</strong>
+                </DetailItem>
+                <DetailItem>
+                  <span>Status</span>
+                  <strong>{statusLabels[selectedEvent.status] || selectedEvent.status}</strong>
+                </DetailItem>
+                <DetailItem>
+                  <span>Horario</span>
+                  <strong>{formatTime(selectedEvent.startTime) || '--:--'}</strong>
+                </DetailItem>
+                <DetailItem>
+                  <span>Responsavel principal</span>
+                  <strong>{selectedEvent.responsibleName || 'Nao definido'}</strong>
+                </DetailItem>
+              </DetailGrid>
+
+              {selectedEvent.description && (
+                <DetailItem>
+                  <span>Descricao</span>
+                  <strong>{selectedEvent.description}</strong>
+                </DetailItem>
+              )}
+
+              <LightPanel style={{ marginTop: 14 }}>
+                <h2>Equipe escalada</h2>
+                {assignments.length ? assignments.map((assignment) => (
+                  <Row key={`${assignment.coverageRole}-${assignment.employeeId}`} $columns="1fr 1fr">
+                    <strong>{roleLabels[assignment.coverageRole] || assignment.coverageRole}</strong>
+                    <span>{assignment.employeeName}</span>
+                  </Row>
+                )) : <Empty>Nenhum responsavel escalado.</Empty>}
+              </LightPanel>
+
+              <ButtonRow>
+                <SecondaryButton type="button" onClick={() => setIsEditingEvent(true)}>Editar</SecondaryButton>
+                <DangerButton type="button" onClick={deletePauta}>Excluir</DangerButton>
+              </ButtonRow>
+            </>
+          )}
+        </ModalPanel>
+      </ModalBackdrop>
+    );
+  };
+
+  const renderPautaFormModal = () => {
+    if (!showPautaForm) {
+      return null;
+    }
+
+    return (
+      <ModalBackdrop onClick={() => setShowPautaForm(false)}>
+        <ModalPanel onClick={(event) => event.stopPropagation()}>
+          <ModalHeader>
+            <div>
+              <h2>Nova pauta</h2>
+              <p>Foto, video e stories</p>
+            </div>
+            <CloseButton type="button" onClick={() => setShowPautaForm(false)}>Fechar</CloseButton>
+          </ModalHeader>
           <form onSubmit={createPauta}>
             <Field>
               Titulo
@@ -732,7 +1339,10 @@ const AdminPage = () => {
                   required
                   type="date"
                   value={pautaForm.eventDate}
-                  onChange={(event) => setPautaForm({ ...pautaForm, eventDate: event.target.value })}
+                  onChange={(event) => {
+                    setPautaForm({ ...pautaForm, eventDate: event.target.value });
+                    setSelectedDate(event.target.value);
+                  }}
                 />
               </Field>
               <Field>
@@ -744,21 +1354,13 @@ const AdminPage = () => {
                 />
               </Field>
               <Field>
-                Fim
-                <input
-                  type="time"
-                  value={pautaForm.endTime}
-                  onChange={(event) => setPautaForm({ ...pautaForm, endTime: event.target.value })}
-                />
-              </Field>
-              <Field>
-                Prioridade
+                Tipo de pauta
                 <select
-                  value={pautaForm.priority}
-                  onChange={(event) => setPautaForm({ ...pautaForm, priority: event.target.value })}
+                  value={pautaForm.category}
+                  onChange={(event) => setPautaForm({ ...pautaForm, category: event.target.value })}
                 >
-                  {Object.entries(priorityLabels).map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
+                  {coverageCategories.map((category) => (
+                    <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
               </Field>
@@ -770,27 +1372,6 @@ const AdminPage = () => {
                 onChange={(event) => setPautaForm({ ...pautaForm, description: event.target.value })}
               />
             </Field>
-            <FieldGrid>
-              <Field>
-                Setor
-                <select
-                  value={pautaForm.sectorId}
-                  onChange={(event) => setPautaForm({ ...pautaForm, sectorId: event.target.value })}
-                >
-                  <option value="">Geral</option>
-                  {sectors.map((sector) => (
-                    <option key={sector.id} value={sector.id}>{sector.name}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field>
-                Grupo
-                <input
-                  value={pautaForm.whatsappGroupName}
-                  onChange={(event) => setPautaForm({ ...pautaForm, whatsappGroupName: event.target.value })}
-                />
-              </Field>
-            </FieldGrid>
             {Object.entries(roleLabels).map(([role, label]) => {
               const key = role === 'PHOTOGRAPHER' ? 'photographerId' : role === 'VIDEOMAKER' ? 'videomakerId' : 'storymakerId';
               return (
@@ -808,11 +1389,301 @@ const AdminPage = () => {
                 </Field>
               );
             })}
-            <PrimaryButton type="submit">Salvar pauta</PrimaryButton>
+            <ButtonRow>
+              <SecondaryButton type="button" onClick={() => setShowPautaForm(false)}>Cancelar</SecondaryButton>
+              <PrimaryButton type="submit">Salvar pauta</PrimaryButton>
+            </ButtonRow>
           </form>
-        </FormPanel>
-      </CalendarLayout>
-    </>
+        </ModalPanel>
+      </ModalBackdrop>
+    );
+  };
+
+  const renderDesignFormModal = () => {
+    if (!showDesignForm) {
+      return null;
+    }
+
+    return (
+      <ModalBackdrop onClick={() => setShowDesignForm(false)}>
+        <ModalPanel onClick={(event) => event.stopPropagation()}>
+          <ModalHeader>
+            <div>
+              <h2>Novo design</h2>
+              <p>Quadro de producao</p>
+            </div>
+            <CloseButton type="button" onClick={() => setShowDesignForm(false)}>Fechar</CloseButton>
+          </ModalHeader>
+          <form onSubmit={createDesignTask}>
+            <Field>
+              Titulo
+              <input
+                required
+                value={designForm.title}
+                onChange={(event) => setDesignForm({ ...designForm, title: event.target.value })}
+              />
+            </Field>
+            <Field>
+              Briefing
+              <textarea
+                value={designForm.description}
+                onChange={(event) => setDesignForm({ ...designForm, description: event.target.value })}
+              />
+            </Field>
+            <FieldGrid>
+              <Field>
+                Entrega
+                <input
+                  required
+                  type="date"
+                  value={designForm.eventDate}
+                  onChange={(event) => setDesignForm({ ...designForm, eventDate: event.target.value })}
+                />
+              </Field>
+              <Field>
+                Prioridade
+                <select
+                  value={designForm.priority}
+                  onChange={(event) => setDesignForm({ ...designForm, priority: event.target.value })}
+                >
+                  {Object.entries(priorityLabels).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
+                </select>
+              </Field>
+            </FieldGrid>
+            <Field>
+              Tipo de peca
+              <select
+                value={designForm.category}
+                onChange={(event) => setDesignForm({ ...designForm, category: event.target.value })}
+              >
+                {designCategories.map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </Field>
+            <Field>
+              Responsavel
+              <select
+                value={designForm.responsibleId}
+                onChange={(event) => setDesignForm({ ...designForm, responsibleId: event.target.value })}
+              >
+                <option value="">Nao definido</option>
+                {employees.map((employee) => (
+                  <option key={employee.id} value={employee.id}>{employee.name}</option>
+                ))}
+              </select>
+            </Field>
+            <ButtonRow>
+              <SecondaryButton type="button" onClick={() => setShowDesignForm(false)}>Cancelar</SecondaryButton>
+              <PrimaryButton type="submit">Criar trabalho</PrimaryButton>
+            </ButtonRow>
+          </form>
+        </ModalPanel>
+      </ModalBackdrop>
+    );
+  };
+
+  const renderDesignDetails = () => {
+    if (!selectedDesign) {
+      return null;
+    }
+
+    return (
+      <ModalBackdrop onClick={closeDesignDetails}>
+        <ModalPanel onClick={(event) => event.stopPropagation()}>
+          <ModalHeader>
+            <div>
+              <h2>{isEditingDesign ? 'Editar design' : selectedDesign.title}</h2>
+              <p>{new Date(`${selectedDesign.eventDate}T00:00:00`).toLocaleDateString('pt-BR')}</p>
+            </div>
+            <CloseButton type="button" onClick={closeDesignDetails}>Fechar</CloseButton>
+          </ModalHeader>
+
+          {isEditingDesign ? (
+            <form onSubmit={updateDesignTask}>
+              <Field>
+                Titulo
+                <input
+                  required
+                  value={editDesignForm.title}
+                  onChange={(event) => setEditDesignForm({ ...editDesignForm, title: event.target.value })}
+                />
+              </Field>
+              <Field>
+                Briefing
+                <textarea
+                  value={editDesignForm.description}
+                  onChange={(event) => setEditDesignForm({ ...editDesignForm, description: event.target.value })}
+                />
+              </Field>
+              <FieldGrid>
+                <Field>
+                  Entrega
+                  <input
+                    required
+                    type="date"
+                    value={editDesignForm.eventDate}
+                    onChange={(event) => setEditDesignForm({ ...editDesignForm, eventDate: event.target.value })}
+                  />
+                </Field>
+                <Field>
+                  Status
+                  <select
+                    value={editDesignForm.status}
+                    onChange={(event) => setEditDesignForm({ ...editDesignForm, status: event.target.value })}
+                  >
+                    {designColumns.map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                    <option value="CANCELED">Cancelado</option>
+                  </select>
+                </Field>
+                <Field>
+                  Prioridade
+                  <select
+                    value={editDesignForm.priority}
+                    onChange={(event) => setEditDesignForm({ ...editDesignForm, priority: event.target.value })}
+                  >
+                    {Object.entries(priorityLabels).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field>
+                  Tipo de peca
+                  <select
+                    value={editDesignForm.category}
+                    onChange={(event) => setEditDesignForm({ ...editDesignForm, category: event.target.value })}
+                  >
+                    {designCategories.map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </Field>
+              </FieldGrid>
+              <Field>
+                Responsavel
+                <select
+                  value={editDesignForm.responsibleId}
+                  onChange={(event) => setEditDesignForm({ ...editDesignForm, responsibleId: event.target.value })}
+                >
+                  <option value="">Nao definido</option>
+                  {employees.map((employee) => (
+                    <option key={employee.id} value={employee.id}>{employee.name}</option>
+                  ))}
+                </select>
+              </Field>
+              <ButtonRow>
+                <SecondaryButton type="button" onClick={() => setIsEditingDesign(false)}>Cancelar</SecondaryButton>
+                <PrimaryButton type="submit">Salvar alteracoes</PrimaryButton>
+              </ButtonRow>
+            </form>
+          ) : (
+            <>
+              <DetailGrid>
+                <DetailItem>
+                  <span>Status</span>
+                  <strong>{statusLabels[selectedDesign.status] || selectedDesign.status}</strong>
+                </DetailItem>
+                <DetailItem>
+                  <span>Prioridade</span>
+                  <strong>{priorityLabels[selectedDesign.priority] || selectedDesign.priority}</strong>
+                </DetailItem>
+                <DetailItem>
+                  <span>Tipo de peca</span>
+                  <strong>{selectedDesign.category || selectedDesign.sectorName || 'Design'}</strong>
+                </DetailItem>
+                <DetailItem>
+                  <span>Responsavel</span>
+                  <strong>{selectedDesign.responsibleName || 'Nao definido'}</strong>
+                </DetailItem>
+              </DetailGrid>
+
+              {selectedDesign.description && (
+                <DetailItem>
+                  <span>Briefing</span>
+                  <strong>{selectedDesign.description}</strong>
+                </DetailItem>
+              )}
+
+              <ButtonRow>
+                <SecondaryButton type="button" onClick={() => setIsEditingDesign(true)}>Editar</SecondaryButton>
+                <DangerButton type="button" onClick={deleteDesignTask}>Excluir</DangerButton>
+              </ButtonRow>
+            </>
+          )}
+        </ModalPanel>
+      </ModalBackdrop>
+    );
+  };
+
+  const renderDesign = () => (
+    <BoardLayout>
+      <DesignBoard>
+        {designColumns.map(([status, label], columnIndex) => {
+          const items = designItems.filter((item) => item.status === status);
+          return (
+            <BoardColumn
+              key={status}
+              $active={dragOverStatus === status}
+              onDragOver={(event) => {
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+                setDragOverStatus(status);
+              }}
+              onDragLeave={() => setDragOverStatus((current) => (current === status ? null : current))}
+              onDrop={(event) => dropDesignCard(event, status)}
+            >
+              <h2>
+                {label}
+                <Pill>{items.length}</Pill>
+              </h2>
+              {items.length ? items.map((item, index) => (
+                <DesignCard
+                  key={item.id}
+                  draggable
+                  $color={palette[(columnIndex + index) % palette.length]}
+                  $dragging={draggingDesignId === item.id}
+                  onDragStart={(event) => startDesignDrag(event, item)}
+                  onDragEnd={() => {
+                    setDraggingDesignId(null);
+                    setDragOverStatus(null);
+                  }}
+                >
+                  <h3>{item.title}</h3>
+                  {item.description && <p>{item.description}</p>}
+                  <CardPills>
+                    <Pill>{priorityLabels[item.priority] || item.priority}</Pill>
+                    <Pill>{item.category || item.sectorName || 'Design'}</Pill>
+                  </CardPills>
+                  <CardMeta>
+                    <span>Entrega</span>
+                    <strong>{new Date(`${item.eventDate}T00:00:00`).toLocaleDateString('pt-BR')}</strong>
+                  </CardMeta>
+                  <CardMeta>
+                    <span>Responsavel</span>
+                    <strong>{item.responsibleName || 'Nao definido'}</strong>
+                  </CardMeta>
+                  <InlineAction
+                    type="button"
+                    draggable={false}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      openDesignDetails(item);
+                    }}
+                  >
+                    Detalhes
+                  </InlineAction>
+                </DesignCard>
+              )) : <Empty>Nenhum trabalho.</Empty>}
+            </BoardColumn>
+          );
+        })}
+      </DesignBoard>
+
+    </BoardLayout>
   );
 
   const renderEquipe = () => (
@@ -850,18 +1721,6 @@ const AdminPage = () => {
                 <option value="Produtor">Produtor</option>
               </select>
             </Field>
-            <Field>
-              Setor
-              <select
-                value={employeeForm.sectorId}
-                onChange={(event) => setEmployeeForm({ ...employeeForm, sectorId: event.target.value })}
-              >
-                <option value="">Geral</option>
-                {sectors.map((sector) => (
-                  <option key={sector.id} value={sector.id}>{sector.name}</option>
-                ))}
-              </select>
-            </Field>
           </FieldGrid>
           <PrimaryButton type="submit">Salvar funcionario</PrimaryButton>
         </form>
@@ -877,7 +1736,7 @@ const AdminPage = () => {
             </div>
             <div>
               <strong>{employee.roleName || 'Sem funcao'}</strong>
-              <span>{employee.sectorName || 'Geral'}</span>
+              <span>{employee.active ? 'Disponivel' : 'Inativo'}</span>
             </div>
             <Pill>{employee.active ? 'Ativo' : 'Inativo'}</Pill>
           </Row>
@@ -886,67 +1745,67 @@ const AdminPage = () => {
     </ListGrid>
   );
 
-  const renderSetores = () => (
-    <ListGrid>
-      <LightPanel>
-        <h2>Novo setor</h2>
-        <form onSubmit={createSector}>
-          <Field>
-            Nome
-            <input
-              required
-              value={sectorForm.name}
-              onChange={(event) => setSectorForm({ ...sectorForm, name: event.target.value })}
-            />
-          </Field>
-          <Field>
-            Cor
-            <input
-              type="color"
-              value={sectorForm.color}
-              onChange={(event) => setSectorForm({ ...sectorForm, color: event.target.value })}
-            />
-          </Field>
-          <PrimaryButton type="submit">Criar setor</PrimaryButton>
-        </form>
-      </LightPanel>
-
-      <LightPanel>
-        <h2>Setores</h2>
-        {sectors.length ? sectors.map((sector) => (
-          <Row key={sector.id} $columns="1fr 120px 120px">
-            <div>
-              <strong>{sector.name}</strong>
-              <span>{employees.filter((employee) => employee.sectorId === sector.id).length} pessoa(s)</span>
-            </div>
-            <Pill $color={sector.color}>{sector.color}</Pill>
-            <Pill>{sector.active ? 'Ativo' : 'Inativo'}</Pill>
-          </Row>
-        )) : <Empty>Nenhum setor cadastrado.</Empty>}
-      </LightPanel>
-    </ListGrid>
-  );
-
   const monthBase = new Date(`${selectedDate}T00:00:00`);
-  const miniDays = Array.from({ length: 31 }, (_, index) => index + 1);
+  const miniDays = Array.from({ length: daysInMonth(monthBase) }, (_, index) => index + 1);
+  const miniBlanks = Array.from({ length: new Date(monthBase.getFullYear(), monthBase.getMonth(), 1).getDay() });
+  const activeTitle = {
+    agenda: monthTitle(monthBase),
+    design: 'Design',
+    equipe: 'Equipe'
+  }[activeTab];
 
   return (
     <Page>
-      <AppFrame>
-        <Sidebar>
+      <TopBar>
+        <Profile>
+          <Mark>+</Mark>
+          <ProfileText>
+            <strong>Vmais Agenda</strong>
+            <span>{admin?.displayName || 'Administrador'}</span>
+          </ProfileText>
+        </Profile>
+
+        <SidebarNav>
+          <SidebarNavButton $active={activeTab === 'agenda'} onClick={() => setActiveTab('agenda')}>
+            Agenda de pautas
+            <span>Foto, video e stories</span>
+          </SidebarNavButton>
+          <SidebarNavButton $active={activeTab === 'design'} onClick={() => setActiveTab('design')}>
+            Design
+            <span>Quadro de producao</span>
+          </SidebarNavButton>
+          <SidebarNavButton $active={activeTab === 'equipe'} onClick={() => setActiveTab('equipe')}>
+            Equipe
+            <span>Funcionarios e funcoes</span>
+          </SidebarNavButton>
+        </SidebarNav>
+
+        <IconButton onClick={logout}>Sair</IconButton>
+      </TopBar>
+
+      <AppFrame $withSidebar={activeTab === 'agenda'}>
+        {activeTab === 'agenda' && (
+          <Sidebar>
           <Profile>
-            <Mark>+</Mark>
             <ProfileText>
-              <strong>Vmais Agenda</strong>
-              <span>{admin?.displayName || 'Administrador'}</span>
+              <strong>Apoio da agenda</strong>
+              <span>Periodo, resumo e coberturas</span>
             </ProfileText>
-            <IconButton onClick={logout}>Sair</IconButton>
           </Profile>
 
           <DarkPanel>
-            <h2>{monthTitle(monthBase)}</h2>
+            <MiniHeader>
+              <h2>{monthTitle(monthBase)}</h2>
+              <MiniNav>
+                <button type="button" aria-label="Ano anterior" onClick={() => changeSelectedYear(-1)}>{'<<'}</button>
+                <button type="button" aria-label="Mes anterior" onClick={() => changeSelectedMonth(-1)}>{'<'}</button>
+                <button type="button" aria-label="Proximo mes" onClick={() => changeSelectedMonth(1)}>{'>'}</button>
+                <button type="button" aria-label="Proximo ano" onClick={() => changeSelectedYear(1)}>{'>>'}</button>
+              </MiniNav>
+            </MiniHeader>
             <MiniMonth>
               {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((day) => <span key={day}>{day}</span>)}
+              {miniBlanks.map((_, index) => <MiniBlank key={`blank-${index}`} />)}
               {miniDays.map((day) => {
                 const date = new Date(monthBase.getFullYear(), monthBase.getMonth(), day);
                 const iso = toIsoDate(date);
@@ -962,8 +1821,8 @@ const AdminPage = () => {
           <DarkPanel>
             <h2>Resumo</h2>
             <Stat><span>Hoje</span><strong>{todayItems.length}</strong></Stat>
-            <Stat><span>Semana</span><strong>{weekItems.length}</strong></Stat>
-            <Stat><span>Equipe</span><strong>{employees.length}</strong></Stat>
+            <Stat><span>Dia ativo</span><strong>{selectedDateItems.length}</strong></Stat>
+            <Stat><span>Confirmadas</span><strong>{confirmedCoverageItems.length}</strong></Stat>
           </DarkPanel>
 
           <DarkPanel>
@@ -971,7 +1830,7 @@ const AdminPage = () => {
             {nextItem ? (
               <>
                 <Stat><span>{formatTime(nextItem.startTime) || '--:--'}</span><strong>{nextItem.title}</strong></Stat>
-                <Stat><span>Setor</span><strong>{nextItem.sectorName || 'Geral'}</strong></Stat>
+                <Stat><span>Tipo</span><strong>{nextItem.category || nextItem.sectorName || 'Geral'}</strong></Stat>
               </>
             ) : <Empty>Nenhuma pauta futura.</Empty>}
           </DarkPanel>
@@ -988,22 +1847,28 @@ const AdminPage = () => {
               ))}
             </Legend>
           </DarkPanel>
-        </Sidebar>
+          </Sidebar>
+        )}
 
         <MainPanel>
           <Header>
-            <h1>{monthTitle(monthBase)}</h1>
-            <Tabs>
-              <TabButton $active={activeTab === 'agenda'} onClick={() => setActiveTab('agenda')}>Agenda</TabButton>
-              <TabButton $active={activeTab === 'equipe'} onClick={() => setActiveTab('equipe')}>Equipe</TabButton>
-              <TabButton $active={activeTab === 'setores'} onClick={() => setActiveTab('setores')}>Setores</TabButton>
-            </Tabs>
+            <h1>{activeTitle}</h1>
+            {activeTab === 'agenda' && (
+              <HeaderAction type="button" onClick={() => setShowPautaForm(true)}>Nova pauta</HeaderAction>
+            )}
+            {activeTab === 'design' && (
+              <HeaderAction type="button" onClick={() => setShowDesignForm(true)}>Novo card</HeaderAction>
+            )}
           </Header>
           <Content>
             {notice && <Notice>{notice}</Notice>}
             {activeTab === 'agenda' && renderAgenda()}
+            {activeTab === 'design' && renderDesign()}
             {activeTab === 'equipe' && renderEquipe()}
-            {activeTab === 'setores' && renderSetores()}
+            {renderEventDetails()}
+            {renderDesignDetails()}
+            {renderPautaFormModal()}
+            {renderDesignFormModal()}
           </Content>
         </MainPanel>
       </AppFrame>
