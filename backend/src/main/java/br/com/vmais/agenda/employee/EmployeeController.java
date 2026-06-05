@@ -1,9 +1,12 @@
 package br.com.vmais.agenda.employee;
 
+import br.com.vmais.agenda.event.AgendaAssignmentRepository;
+import br.com.vmais.agenda.event.AgendaItemRepository;
 import br.com.vmais.agenda.sector.Sector;
 import br.com.vmais.agenda.sector.SectorRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -23,16 +26,23 @@ import org.springframework.web.server.ResponseStatusException;
 public class EmployeeController {
   private final EmployeeRepository employees;
   private final SectorRepository sectors;
+  private final AgendaItemRepository agendaItems;
+  private final AgendaAssignmentRepository assignments;
 
-  public EmployeeController(EmployeeRepository employees, SectorRepository sectors) {
+  public EmployeeController(
+      EmployeeRepository employees,
+      SectorRepository sectors,
+      AgendaItemRepository agendaItems,
+      AgendaAssignmentRepository assignments) {
     this.employees = employees;
     this.sectors = sectors;
+    this.agendaItems = agendaItems;
+    this.assignments = assignments;
   }
 
   @GetMapping
   public List<EmployeeResponse> list() {
     return employees.findAllByOrderByNameAsc().stream()
-        .filter(Employee::isActive)
         .map(EmployeeResponse::from)
         .toList();
   }
@@ -55,11 +65,13 @@ public class EmployeeController {
 
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Transactional
   public void delete(@PathVariable UUID id) {
     Employee employee = employees.findById(id)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Funcionario nao encontrado"));
-    employee.setActive(false);
-    employees.save(employee);
+    assignments.deleteByEmployeeId(id);
+    agendaItems.clearResponsibleByEmployeeId(id);
+    employees.delete(employee);
   }
 
   private void apply(Employee employee, EmployeeRequest request) {

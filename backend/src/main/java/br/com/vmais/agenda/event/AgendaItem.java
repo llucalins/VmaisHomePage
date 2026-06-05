@@ -59,6 +59,12 @@ public class AgendaItem {
   @Column(length = 80)
   private String category;
 
+  @Column(name = "meeting_point", length = 180)
+  private String meetingPoint;
+
+  @Column(columnDefinition = "text")
+  private String notes;
+
   @Column(name = "whatsapp_group_name", length = 140)
   private String whatsappGroupName;
 
@@ -174,6 +180,22 @@ public class AgendaItem {
 
   public void setCategory(String category) {
     this.category = category;
+  }
+
+  public String getMeetingPoint() {
+    return meetingPoint;
+  }
+
+  public void setMeetingPoint(String meetingPoint) {
+    this.meetingPoint = meetingPoint;
+  }
+
+  public String getNotes() {
+    return notes;
+  }
+
+  public void setNotes(String notes) {
+    this.notes = notes;
   }
 
   public String getWhatsappGroupName() {

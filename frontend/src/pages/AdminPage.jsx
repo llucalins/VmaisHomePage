@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import { apiRequest, authStorage } from '../services/api';
+import { ApiError, apiRequest, authStorage, validateSession } from '../services/api';
 
 const roleLabels = {
   PHOTOGRAPHER: 'Fotografo',
@@ -132,6 +132,118 @@ const IconButton = styled.button`
   padding: 9px 12px;
 `;
 
+const SearchBox = styled.div`
+  position: relative;
+  width: ${({ $expanded }) => $expanded ? 'min(420px, 44vw)' : '42px'};
+  transition: width 180ms ease;
+
+  @media (max-width: 820px) {
+    width: ${({ $expanded }) => $expanded ? '100%' : '42px'};
+  }
+`;
+
+const SearchInput = styled.input`
+  width: 100%;
+  height: 42px;
+  border: 1px solid #dce2e8;
+  border-radius: 8px;
+  background: #fff;
+  color: #20242a;
+  opacity: ${({ $expanded }) => $expanded ? 1 : 0};
+  pointer-events: ${({ $expanded }) => $expanded ? 'auto' : 'none'};
+  padding: 11px 14px;
+  transition: opacity 120ms ease;
+
+  &::placeholder {
+    color: #8a929c;
+  }
+`;
+
+const SearchToggle = styled.button`
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: ${({ $expanded }) => $expanded ? 'none' : 'grid'};
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #dce2e8;
+  border-radius: 8px;
+  background: #fff;
+
+  &::before {
+    content: '';
+    width: 13px;
+    height: 13px;
+    border: 2px solid #20242a;
+    border-radius: 50%;
+    transform: translate(-2px, -2px);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    width: 9px;
+    height: 2px;
+    border-radius: 999px;
+    background: #20242a;
+    transform: translate(8px, 8px) rotate(45deg);
+  }
+`;
+
+const SearchResults = styled.div`
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 12;
+  width: min(420px, 100vw - 56px);
+  border: 1px solid #dce2e8;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 18px 46px rgba(18, 21, 24, 0.14);
+  overflow: hidden;
+`;
+
+const SearchResultButton = styled.button`
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 10px;
+  width: 100%;
+  border-bottom: 1px solid #edf0f3;
+  background: transparent;
+  color: #20242a;
+  padding: 11px 12px;
+  text-align: left;
+
+  &:hover {
+    background: #f4f6f8;
+  }
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  small {
+    color: #69727d;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  strong {
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  span {
+    color: #68707a;
+    font-size: 0.82rem;
+  }
+`;
+
+const SearchEmpty = styled.div`
+  color: #68707a;
+  padding: 13px 14px;
+`;
+
 const MiniHeader = styled.div`
   display: flex;
   align-items: center;
@@ -187,10 +299,34 @@ const MiniBlank = styled.div`
 `;
 
 const MiniDay = styled.button`
+  position: relative;
+  display: grid;
+  place-items: center;
   aspect-ratio: 1;
   border-radius: 8px;
   background: ${({ $active }) => $active ? '#e23d32' : 'transparent'};
   color: ${({ $active }) => $active ? '#fff' : 'rgba(255,255,255,0.84)'};
+  font-weight: ${({ $active }) => $active ? 800 : 500};
+
+  ${({ $hasItems }) => $hasItems && `
+    &::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: 5px;
+      width: 14px;
+      height: 3px;
+      border-radius: 999px;
+      background: rgba(51, 209, 122, 0.95);
+      transform: translateX(-50%);
+    }
+  `}
+
+  ${({ $active, $hasItems }) => $active && $hasItems && `
+    &::after {
+      background: rgba(255, 255, 255, 0.88);
+    }
+  `}
 `;
 
 const Stat = styled.div`
@@ -346,6 +482,31 @@ const BoardLayout = styled.div`
   padding-top: 20px;
 `;
 
+const FilterBar = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 18px 0 0;
+`;
+
+const FilterField = styled.label`
+  color: #4f5965;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+
+  select {
+    display: block;
+    min-width: 150px;
+    margin-top: 5px;
+    border: 1px solid #dde3ea;
+    border-radius: 8px;
+    background: #fff;
+    color: #20242a;
+    padding: 9px 10px;
+  }
+`;
+
 const DesignBoard = styled.div`
   display: grid;
   grid-template-columns: repeat(4, minmax(220px, 1fr));
@@ -381,7 +542,7 @@ const DesignCard = styled.article`
   border: 1px solid #e0e5eb;
   border-radius: 8px;
   background: ${({ $color }) => $color || '#fff'};
-  box-shadow: 0 12px 28px rgba(18, 21, 24, 0.08);
+  box-shadow: ${({ $highlight }) => $highlight ? '0 0 0 3px rgba(226, 61, 50, 0.34), 0 18px 38px rgba(18, 21, 24, 0.14)' : '0 12px 28px rgba(18, 21, 24, 0.08)'};
   color: #17191d;
   cursor: grab;
   margin-bottom: 10px;
@@ -494,7 +655,7 @@ const EventCard = styled.article`
   color: #17191d;
   padding: 10px;
   overflow: hidden;
-  box-shadow: 0 10px 20px rgba(18, 21, 24, 0.08);
+  box-shadow: ${({ $highlight }) => $highlight ? '0 0 0 3px rgba(226, 61, 50, 0.34), 0 16px 32px rgba(18, 21, 24, 0.18)' : '0 10px 20px rgba(18, 21, 24, 0.08)'};
   cursor: pointer;
 
   h3 {
@@ -578,13 +739,14 @@ const Field = styled.label`
 const PrimaryButton = styled.button`
   width: 100%;
   border-radius: 8px;
-  background: #111;
+  background: ${({ disabled }) => disabled ? '#858b93' : '#111'};
   color: #fff;
   font-weight: 800;
   padding: 13px 14px;
+  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
 
   &:hover {
-    background: #e23d32;
+    background: ${({ disabled }) => disabled ? '#858b93' : '#e23d32'};
   }
 `;
 
@@ -592,6 +754,23 @@ const HeaderAction = styled(PrimaryButton)`
   width: auto;
   min-width: 150px;
   padding: 11px 16px;
+`;
+
+const HeaderTools = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+
+  @media (max-width: 820px) {
+    width: 100%;
+    align-items: stretch;
+    flex-wrap: wrap;
+
+    ${HeaderAction} {
+      flex: 1;
+    }
+  }
 `;
 
 const SecondaryButton = styled.button`
@@ -652,9 +831,10 @@ const Row = styled.div`
   grid-template-columns: ${({ $columns }) => $columns || '1fr 1fr 1fr'};
   gap: 12px;
   align-items: center;
-  border: 1px solid #dde2e8;
+  border: 1px solid ${({ $highlight }) => $highlight ? '#e23d32' : '#dde2e8'};
   border-radius: 8px;
   background: #fff;
+  box-shadow: ${({ $highlight }) => $highlight ? '0 0 0 3px rgba(226, 61, 50, 0.12)' : 'none'};
   padding: 12px;
   margin-bottom: 8px;
 
@@ -684,13 +864,35 @@ const Pill = styled.span`
   padding: 5px 9px;
 `;
 
+const StatusPill = styled(Pill)`
+  background: ${({ $active }) => $active ? '#d8f8df' : '#ffe1de'};
+  color: ${({ $active }) => $active ? '#176b2c' : '#b42318'};
+`;
+
 const Notice = styled.div`
-  border: 1px solid #f1d38f;
+  border: 1px solid ${({ $type }) => {
+    if ($type === 'success') return '#9ed8aa';
+    if ($type === 'error') return '#efb0aa';
+    return '#f1d38f';
+  }};
   border-radius: 8px;
-  background: #fff8e6;
-  color: #6b4a00;
+  background: ${({ $type }) => {
+    if ($type === 'success') return '#effaf1';
+    if ($type === 'error') return '#fff1f0';
+    return '#fff8e6';
+  }};
+  color: ${({ $type }) => {
+    if ($type === 'success') return '#176b2c';
+    if ($type === 'error') return '#9f1f17';
+    return '#6b4a00';
+  }};
   padding: 12px 14px;
   margin: 18px 0 0;
+`;
+
+const LoadingState = styled.div`
+  color: #68707a;
+  padding: 28px 0;
 `;
 
 const Empty = styled.div`
@@ -766,6 +968,8 @@ const DetailItem = styled.div`
 const initialPautaForm = {
   title: '',
   description: '',
+  meetingPoint: '',
+  notes: '',
   eventDate: new Date().toISOString().slice(0, 10),
   startTime: '09:00',
   status: 'IN_PROGRESS',
@@ -875,12 +1079,66 @@ const layoutCalendarItems = (items) => {
 
 const daysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
 
+const normalizeSearch = (value = '') =>
+  value
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+const levenshteinDistance = (a, b) => {
+  if (!a) return b.length;
+  if (!b) return a.length;
+  const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+
+  for (let i = 1; i <= a.length; i += 1) {
+    const current = [i];
+    for (let j = 1; j <= b.length; j += 1) {
+      current[j] = a[i - 1] === b[j - 1]
+        ? previous[j - 1]
+        : Math.min(previous[j - 1], previous[j], current[j - 1]) + 1;
+    }
+    previous.splice(0, previous.length, ...current);
+  }
+
+  return previous[b.length];
+};
+
+const similarityScore = (query, target) => {
+  const normalizedQuery = normalizeSearch(query);
+  const normalizedTarget = normalizeSearch(target);
+  if (!normalizedQuery || !normalizedTarget) return 0;
+  if (normalizedTarget === normalizedQuery) return 120;
+  if (normalizedTarget.startsWith(normalizedQuery)) return 105;
+  if (normalizedTarget.includes(normalizedQuery)) return 92;
+
+  const queryTokens = normalizedQuery.split(/\s+/).filter(Boolean);
+  const targetTokens = normalizedTarget.split(/\s+/).filter(Boolean);
+  const tokenScore = Math.max(
+    0,
+    ...targetTokens.flatMap((targetToken) => queryTokens.map((queryToken) => {
+      if (targetToken.startsWith(queryToken)) return 82;
+      if (targetToken.includes(queryToken)) return 72;
+      const distance = levenshteinDistance(queryToken, targetToken);
+      const ratio = 1 - (distance / Math.max(queryToken.length, targetToken.length));
+      return ratio >= 0.58 ? Math.round(ratio * 68) : 0;
+    }))
+  );
+
+  const distance = levenshteinDistance(normalizedQuery, normalizedTarget);
+  const ratio = 1 - (distance / Math.max(normalizedQuery.length, normalizedTarget.length));
+  return Math.max(tokenScore, ratio >= 0.55 ? Math.round(ratio * 80) : 0);
+};
+
 const getAssignmentEmployeeId = (item, role) =>
   item.assignments?.find((assignment) => assignment.coverageRole === role)?.employeeId || '';
 
 const itemToPautaForm = (item) => ({
   title: item.title || '',
   description: item.description || '',
+  meetingPoint: item.meetingPoint || '',
+  notes: item.notes || '',
   eventDate: item.eventDate,
   startTime: formatTime(item.startTime) || '09:00',
   status: item.status || 'IN_PROGRESS',
@@ -908,6 +1166,19 @@ const itemToEmployeeForm = (employee) => ({
   active: employee.active ?? true
 });
 
+const messageForError = (error) => {
+  if (error instanceof ApiError) {
+    if (error.code === 'NETWORK') {
+      return error.message;
+    }
+    if (error.code === 'AUTH') {
+      return error.message;
+    }
+    return error.message || 'Nao foi possivel concluir a operacao.';
+  }
+  return 'Nao foi possivel concluir a operacao. Tente novamente.';
+};
+
 const AdminPage = () => {
   const navigate = useNavigate();
   const token = authStorage.getToken();
@@ -916,7 +1187,16 @@ const AdminPage = () => {
   const [employees, setEmployees] = useState([]);
   const [activeTab, setActiveTab] = useState('agenda');
   const [selectedDate, setSelectedDate] = useState(toIsoDate(new Date()));
-  const [notice, setNotice] = useState('');
+  const [notice, setNotice] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [agendaFilters, setAgendaFilters] = useState({ category: 'ALL', status: 'ALL', employeeId: 'ALL' });
+  const [designFilters, setDesignFilters] = useState({ category: 'ALL', priority: 'ALL', responsibleId: 'ALL' });
+  const [employeeFilter, setEmployeeFilter] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [highlightedResult, setHighlightedResult] = useState(null);
   const [pautaForm, setPautaForm] = useState(initialPautaForm);
   const [designForm, setDesignForm] = useState(initialDesignForm);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -943,26 +1223,66 @@ const AdminPage = () => {
     roleName: 'Fotografo',
     active: true
   });
+  const searchInputRef = useRef(null);
+
+  const expireSession = () => {
+    authStorage.clear();
+    navigate('/session-expired', { replace: true });
+  };
 
   const loadData = async () => {
+    setIsLoading(true);
     try {
-      const [items, employeeList] = await Promise.all([
+      const [currentAdmin, items, employeeList] = await Promise.all([
+        validateSession(),
         apiRequest('/agenda-items'),
         apiRequest('/employees')
       ]);
+      authStorage.setAdmin(currentAdmin);
       setAgendaItems(items);
       setEmployees(employeeList);
-      setNotice('');
+      setNotice(null);
     } catch (error) {
-      setNotice('Backend indisponivel. O painel precisa da API Java em execucao.');
+      if (error instanceof ApiError && error.code === 'AUTH') {
+        expireSession();
+        return;
+      }
+      setNotice({ type: 'error', message: messageForError(error) });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (token) {
-      loadData();
+    if (!token) {
+      return undefined;
     }
+
+    if (authStorage.isExpired(1000)) {
+      expireSession();
+      return undefined;
+    }
+
+    loadData();
+
+    const expiresAt = authStorage.getExpiresAt();
+    if (!expiresAt) {
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(
+      expireSession,
+      Math.max(0, Date.parse(expiresAt) - Date.now())
+    );
+
+    return () => window.clearTimeout(timeout);
   }, [token]);
+
+  useEffect(() => {
+    if (isSearchExpanded) {
+      searchInputRef.current?.focus();
+    }
+  }, [isSearchExpanded]);
 
   const weekDays = useMemo(() => {
     const start = getMonday(selectedDate);
@@ -980,13 +1300,76 @@ const AdminPage = () => {
 
   const coverageItems = agendaItems.filter((item) => (item.workType || 'COVERAGE') === 'COVERAGE');
   const designItems = agendaItems.filter((item) => item.workType === 'DESIGN');
-  const selectedDateItems = coverageItems.filter((item) => item.eventDate === selectedDate);
+  const activeEmployees = employees.filter((employee) => employee.active);
+  const filteredCoverageItems = coverageItems.filter((item) => {
+    const matchesCategory = agendaFilters.category === 'ALL' || (item.category || item.sectorName || 'Geral') === agendaFilters.category;
+    const matchesStatus = agendaFilters.status === 'ALL' || item.status === agendaFilters.status;
+    const matchesEmployee = agendaFilters.employeeId === 'ALL'
+      || item.assignments?.some((assignment) => assignment.employeeId === agendaFilters.employeeId);
+    return matchesCategory && matchesStatus && matchesEmployee;
+  });
+  const filteredDesignItems = designItems.filter((item) => {
+    const matchesCategory = designFilters.category === 'ALL' || (item.category || item.sectorName || 'Design') === designFilters.category;
+    const matchesPriority = designFilters.priority === 'ALL' || item.priority === designFilters.priority;
+    const matchesResponsible = designFilters.responsibleId === 'ALL' || item.responsibleId === designFilters.responsibleId;
+    return matchesCategory && matchesPriority && matchesResponsible;
+  });
+  const filteredEmployees = employees.filter((employee) => {
+    if (employeeFilter === 'ACTIVE') return employee.active;
+    if (employeeFilter === 'INACTIVE') return !employee.active;
+    return true;
+  });
+  const selectedDateItems = filteredCoverageItems.filter((item) => item.eventDate === selectedDate);
   const positionedDateItems = layoutCalendarItems(selectedDateItems);
   const todayItems = coverageItems.filter((item) => item.eventDate === toIsoDate(new Date()));
   const confirmedCoverageItems = weekItems.filter((item) => item.status === 'IN_PROGRESS');
   const nextItem = [...coverageItems]
     .filter((item) => new Date(`${item.eventDate}T${item.startTime || '00:00'}`) >= new Date())
     .sort((a, b) => `${a.eventDate}${a.startTime || ''}`.localeCompare(`${b.eventDate}${b.startTime || ''}`))[0];
+  const searchResults = useMemo(() => {
+    const query = searchTerm.trim();
+    if (query.length < 2) {
+      return [];
+    }
+
+    return [
+      ...coverageItems.map((item) => ({
+        type: 'agenda',
+        id: item.id,
+        label: item.title,
+        meta: `${new Date(`${item.eventDate}T00:00:00`).toLocaleDateString('pt-BR')} ${formatTime(item.startTime) || ''}`.trim(),
+        item,
+        score: similarityScore(query, item.title)
+      })),
+      ...designItems.map((item) => ({
+        type: 'design',
+        id: item.id,
+        label: item.title,
+        meta: `${statusLabels[item.status] || item.status} · ${item.responsibleName || 'Sem responsavel'}`,
+        item,
+        score: similarityScore(query, item.title)
+      })),
+      ...employees.map((employee) => ({
+        type: 'equipe',
+        id: employee.id,
+        label: employee.name,
+        meta: `${employee.roleName || 'Sem funcao'} · ${employee.active ? 'Ativo' : 'Inativo'}`,
+        employee,
+        score: similarityScore(query, employee.name)
+      }))
+    ]
+      .filter((result) => result.score >= 42)
+      .sort((a, b) => b.score - a.score || a.label.localeCompare(b.label))
+      .slice(0, 8);
+  }, [coverageItems, designItems, employees, searchTerm]);
+
+  useEffect(() => {
+    if (!highlightedResult) return;
+    const element = document.getElementById(`result-${highlightedResult.type}-${highlightedResult.id}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [highlightedResult, activeTab, selectedDate, filteredDesignItems, filteredEmployees]);
 
   if (!token) {
     return <Navigate to="/login" replace />;
@@ -995,6 +1378,51 @@ const AdminPage = () => {
   const logout = () => {
     authStorage.clear();
     navigate('/login');
+  };
+
+  const showNotice = (type, message) => {
+    setNotice({ type, message });
+  };
+
+  const selectSearchResult = (result) => {
+    setHighlightedResult({ type: result.type, id: result.id });
+    setIsSearchOpen(false);
+    setIsSearchExpanded(false);
+
+    if (result.type === 'agenda') {
+      setActiveTab('agenda');
+      setAgendaFilters({ category: 'ALL', status: 'ALL', employeeId: 'ALL' });
+      setSelectedDate(result.item.eventDate);
+      return;
+    }
+
+    if (result.type === 'design') {
+      setActiveTab('design');
+      setDesignFilters({ category: 'ALL', priority: 'ALL', responsibleId: 'ALL' });
+      return;
+    }
+
+    setActiveTab('equipe');
+    setEmployeeFilter('ALL');
+  };
+
+  const runAction = async (action, successMessage) => {
+    setIsSaving(true);
+    try {
+      const result = await action();
+      if (successMessage) {
+        showNotice('success', successMessage);
+      }
+      return result;
+    } catch (error) {
+      showNotice('error', messageForError(error));
+      if (error instanceof ApiError && error.code === 'AUTH') {
+        expireSession();
+      }
+      return undefined;
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const countForDay = (date) => coverageItems.filter((item) => item.eventDate === toIsoDate(date)).length;
@@ -1012,6 +1440,8 @@ const AdminPage = () => {
     return {
       title: form.title,
       description: form.description,
+      meetingPoint: form.meetingPoint,
+      notes: form.notes,
       eventDate: form.eventDate,
       startTime: form.startTime || null,
       endTime: null,
@@ -1096,10 +1526,11 @@ const AdminPage = () => {
 
   const createPauta = async (event) => {
     event.preventDefault();
-    const created = await apiRequest('/agenda-items', {
+    const created = await runAction(() => apiRequest('/agenda-items', {
       method: 'POST',
       body: JSON.stringify(buildPautaPayload(pautaForm))
-    });
+    }), 'Pauta criada com sucesso.');
+    if (!created) return;
     setAgendaItems((items) => [...items, created]);
     setSelectedDate(created.eventDate);
     setPautaForm({ ...initialPautaForm, eventDate: created.eventDate });
@@ -1108,10 +1539,11 @@ const AdminPage = () => {
 
   const updatePauta = async (event) => {
     event.preventDefault();
-    const updated = await apiRequest(`/agenda-items/${selectedEvent.id}`, {
+    const updated = await runAction(() => apiRequest(`/agenda-items/${selectedEvent.id}`, {
       method: 'PUT',
       body: JSON.stringify(buildPautaPayload(editPautaForm))
-    });
+    }), 'Pauta atualizada com sucesso.');
+    if (!updated) return;
     setAgendaItems((items) => items.map((item) => (item.id === updated.id ? updated : item)));
     setSelectedEvent(updated);
     setEditPautaForm(itemToPautaForm(updated));
@@ -1123,17 +1555,19 @@ const AdminPage = () => {
     if (!selectedEvent || !window.confirm('Excluir esta pauta?')) {
       return;
     }
-    await apiRequest(`/agenda-items/${selectedEvent.id}`, { method: 'DELETE' });
+    const deleted = await runAction(() => apiRequest(`/agenda-items/${selectedEvent.id}`, { method: 'DELETE' }), 'Pauta excluida com sucesso.');
+    if (deleted === undefined) return;
     setAgendaItems((items) => items.filter((item) => item.id !== selectedEvent.id));
     closeEventDetails();
   };
 
   const createDesignTask = async (event) => {
     event.preventDefault();
-    const created = await apiRequest('/agenda-items', {
+    const created = await runAction(() => apiRequest('/agenda-items', {
       method: 'POST',
       body: JSON.stringify(buildDesignPayload(designForm))
-    });
+    }), 'Card criado com sucesso.');
+    if (!created) return;
     setAgendaItems((items) => [...items, created]);
     setDesignForm({ ...initialDesignForm, eventDate: created.eventDate });
     setShowDesignForm(false);
@@ -1141,10 +1575,11 @@ const AdminPage = () => {
 
   const updateDesignTask = async (event) => {
     event.preventDefault();
-    const updated = await apiRequest(`/agenda-items/${selectedDesign.id}`, {
+    const updated = await runAction(() => apiRequest(`/agenda-items/${selectedDesign.id}`, {
       method: 'PUT',
       body: JSON.stringify(buildDesignPayload(editDesignForm))
-    });
+    }), 'Card atualizado com sucesso.');
+    if (!updated) return;
     setAgendaItems((items) => items.map((item) => (item.id === updated.id ? updated : item)));
     setSelectedDesign(updated);
     setEditDesignForm(itemToDesignForm(updated));
@@ -1155,17 +1590,19 @@ const AdminPage = () => {
     if (!selectedDesign || !window.confirm('Excluir este card de design?')) {
       return;
     }
-    await apiRequest(`/agenda-items/${selectedDesign.id}`, { method: 'DELETE' });
+    const deleted = await runAction(() => apiRequest(`/agenda-items/${selectedDesign.id}`, { method: 'DELETE' }), 'Card excluido com sucesso.');
+    if (deleted === undefined) return;
     setAgendaItems((items) => items.filter((item) => item.id !== selectedDesign.id));
     closeDesignDetails();
   };
 
   const createEmployee = async (event) => {
     event.preventDefault();
-    const created = await apiRequest('/employees', {
+    const created = await runAction(() => apiRequest('/employees', {
       method: 'POST',
       body: JSON.stringify({ ...employeeForm, sectorId: null })
-    });
+    }), 'Funcionario criado com sucesso.');
+    if (!created) return;
     setEmployees((items) => [...items, created]);
     setEmployeeForm({ name: '', phoneNumber: '', roleName: 'Fotografo', active: true });
     setShowEmployeeForm(false);
@@ -1173,10 +1610,11 @@ const AdminPage = () => {
 
   const updateEmployee = async (event) => {
     event.preventDefault();
-    const updated = await apiRequest(`/employees/${selectedEmployee.id}`, {
+    const updated = await runAction(() => apiRequest(`/employees/${selectedEmployee.id}`, {
       method: 'PUT',
       body: JSON.stringify({ ...editEmployeeForm, sectorId: null })
-    });
+    }), 'Funcionario atualizado com sucesso.');
+    if (!updated) return;
     setEmployees((items) => items.map((employee) => (employee.id === updated.id ? updated : employee)));
     closeEmployeeModal();
   };
@@ -1185,15 +1623,17 @@ const AdminPage = () => {
     if (!window.confirm(`Excluir ${employee.name}?`)) {
       return;
     }
-    await apiRequest(`/employees/${employee.id}`, { method: 'DELETE' });
+    const deleted = await runAction(() => apiRequest(`/employees/${employee.id}`, { method: 'DELETE' }), 'Funcionario excluido com sucesso.');
+    if (deleted === undefined) return;
     setEmployees((items) => items.filter((current) => current.id !== employee.id));
   };
 
   const updateStatus = async (item, status) => {
-    const updated = await apiRequest(`/agenda-items/${item.id}/status`, {
+    const updated = await runAction(() => apiRequest(`/agenda-items/${item.id}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status })
-    });
+    }), 'Status atualizado com sucesso.');
+    if (!updated) return;
     setAgendaItems((items) => items.map((current) => (current.id === updated.id ? updated : current)));
   };
 
@@ -1215,8 +1655,96 @@ const AdminPage = () => {
     await updateStatus(item, status);
   };
 
+  const renderSearch = () => (
+    <SearchBox $expanded={isSearchExpanded}>
+      <SearchToggle
+        type="button"
+        aria-label="Abrir busca"
+        $expanded={isSearchExpanded}
+        onClick={() => {
+          setIsSearchExpanded(true);
+          setIsSearchOpen(true);
+        }}
+      />
+      <SearchInput
+        ref={searchInputRef}
+        type="search"
+        value={searchTerm}
+        $expanded={isSearchExpanded}
+        placeholder="Buscar pauta, card ou funcionario"
+        onChange={(event) => {
+          setSearchTerm(event.target.value);
+          setIsSearchOpen(true);
+        }}
+        onFocus={() => setIsSearchOpen(true)}
+        onBlur={() => window.setTimeout(() => {
+          setIsSearchOpen(false);
+          if (!searchTerm.trim()) {
+            setIsSearchExpanded(false);
+          }
+        }, 140)}
+      />
+      {isSearchExpanded && isSearchOpen && searchTerm.trim().length >= 2 && (
+        <SearchResults>
+          {searchResults.length ? searchResults.map((result) => (
+            <SearchResultButton
+              key={`${result.type}-${result.id}`}
+              type="button"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => selectSearchResult(result)}
+            >
+              <small>{result.type === 'agenda' ? 'Pauta' : result.type === 'design' ? 'Design' : 'Equipe'}</small>
+              <div>
+                <strong>{result.label}</strong>
+                <span>{result.meta}</span>
+              </div>
+            </SearchResultButton>
+          )) : <SearchEmpty>Nenhum resultado parecido.</SearchEmpty>}
+        </SearchResults>
+      )}
+    </SearchBox>
+  );
+
   const renderAgenda = () => (
     <>
+      <FilterBar>
+        <FilterField>
+          Tipo
+          <select
+            value={agendaFilters.category}
+            onChange={(event) => setAgendaFilters({ ...agendaFilters, category: event.target.value })}
+          >
+            <option value="ALL">Todos</option>
+            {coverageCategories.map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+        </FilterField>
+        <FilterField>
+          Status
+          <select
+            value={agendaFilters.status}
+            onChange={(event) => setAgendaFilters({ ...agendaFilters, status: event.target.value })}
+          >
+            <option value="ALL">Todos</option>
+            {Object.entries(statusLabels).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </FilterField>
+        <FilterField>
+          Responsavel
+          <select
+            value={agendaFilters.employeeId}
+            onChange={(event) => setAgendaFilters({ ...agendaFilters, employeeId: event.target.value })}
+          >
+            <option value="ALL">Todos</option>
+            {employees.map((employee) => (
+              <option key={employee.id} value={employee.id}>{employee.name}</option>
+            ))}
+          </select>
+        </FilterField>
+      </FilterBar>
       <WeekStrip>
         <div />
         {weekDays.map((date) => {
@@ -1248,10 +1776,12 @@ const AdminPage = () => {
                 const assignments = item.assignments || [];
                 return (
                   <EventCard
+                    id={`result-agenda-${item.id}`}
                     key={item.id}
                     role="button"
                     tabIndex={0}
                     $color={color}
+                    $highlight={highlightedResult?.type === 'agenda' && highlightedResult.id === item.id}
                     $top={timeToTop(item.startTime)}
                     $height={durationToHeight(item.startTime, item.endTime)}
                     $lane={item.lane}
@@ -1357,10 +1887,24 @@ const AdminPage = () => {
                 </Field>
               </FieldGrid>
               <Field>
+                Ponto de encontro
+                <input
+                  value={editPautaForm.meetingPoint}
+                  onChange={(event) => setEditPautaForm({ ...editPautaForm, meetingPoint: event.target.value })}
+                />
+              </Field>
+              <Field>
                 Descricao
                 <textarea
                   value={editPautaForm.description}
                   onChange={(event) => setEditPautaForm({ ...editPautaForm, description: event.target.value })}
+                />
+              </Field>
+              <Field>
+                Observacoes
+                <textarea
+                  value={editPautaForm.notes}
+                  onChange={(event) => setEditPautaForm({ ...editPautaForm, notes: event.target.value })}
                 />
               </Field>
               {Object.entries(roleLabels).map(([role, label]) => {
@@ -1373,7 +1917,7 @@ const AdminPage = () => {
                       onChange={(event) => setEditPautaForm({ ...editPautaForm, [key]: event.target.value })}
                     >
                       <option value="">Nao escalado</option>
-                      {employees.map((employee) => (
+                      {activeEmployees.map((employee) => (
                         <option key={employee.id} value={employee.id}>{employee.name}</option>
                       ))}
                     </select>
@@ -1382,7 +1926,7 @@ const AdminPage = () => {
               })}
               <ButtonRow>
                 <SecondaryButton type="button" onClick={() => setIsEditingEvent(false)}>Cancelar</SecondaryButton>
-                <PrimaryButton type="submit">Salvar alteracoes</PrimaryButton>
+                <PrimaryButton type="submit" disabled={isSaving}>{isSaving ? 'Salvando...' : 'Salvar alteracoes'}</PrimaryButton>
               </ButtonRow>
             </form>
           ) : (
@@ -1404,12 +1948,23 @@ const AdminPage = () => {
                   <span>Responsavel principal</span>
                   <strong>{selectedEvent.responsibleName || 'Nao definido'}</strong>
                 </DetailItem>
+                <DetailItem>
+                  <span>Ponto de encontro</span>
+                  <strong>{selectedEvent.meetingPoint || 'Nao definido'}</strong>
+                </DetailItem>
               </DetailGrid>
 
               {selectedEvent.description && (
                 <DetailItem>
                   <span>Descricao</span>
                   <strong>{selectedEvent.description}</strong>
+                </DetailItem>
+              )}
+
+              {selectedEvent.notes && (
+                <DetailItem>
+                  <span>Observacoes</span>
+                  <strong>{selectedEvent.notes}</strong>
                 </DetailItem>
               )}
 
@@ -1425,7 +1980,7 @@ const AdminPage = () => {
 
               <ButtonRow>
                 <SecondaryButton type="button" onClick={() => setIsEditingEvent(true)}>Editar</SecondaryButton>
-                <DangerButton type="button" onClick={deletePauta}>Excluir</DangerButton>
+                <DangerButton type="button" disabled={isSaving} onClick={deletePauta}>Excluir</DangerButton>
               </ButtonRow>
             </>
           )}
@@ -1492,10 +2047,24 @@ const AdminPage = () => {
               </Field>
             </FieldGrid>
             <Field>
+              Ponto de encontro
+              <input
+                value={pautaForm.meetingPoint}
+                onChange={(event) => setPautaForm({ ...pautaForm, meetingPoint: event.target.value })}
+              />
+            </Field>
+            <Field>
               Descricao
               <textarea
                 value={pautaForm.description}
                 onChange={(event) => setPautaForm({ ...pautaForm, description: event.target.value })}
+              />
+            </Field>
+            <Field>
+              Observacoes
+              <textarea
+                value={pautaForm.notes}
+                onChange={(event) => setPautaForm({ ...pautaForm, notes: event.target.value })}
               />
             </Field>
             {Object.entries(roleLabels).map(([role, label]) => {
@@ -1508,7 +2077,7 @@ const AdminPage = () => {
                     onChange={(event) => setPautaForm({ ...pautaForm, [key]: event.target.value })}
                   >
                     <option value="">Nao escalado</option>
-                    {employees.map((employee) => (
+                    {activeEmployees.map((employee) => (
                       <option key={employee.id} value={employee.id}>{employee.name}</option>
                     ))}
                   </select>
@@ -1517,7 +2086,7 @@ const AdminPage = () => {
             })}
             <ButtonRow>
               <SecondaryButton type="button" onClick={() => setShowPautaForm(false)}>Cancelar</SecondaryButton>
-              <PrimaryButton type="submit">Salvar pauta</PrimaryButton>
+              <PrimaryButton type="submit" disabled={isSaving}>{isSaving ? 'Salvando...' : 'Salvar pauta'}</PrimaryButton>
             </ButtonRow>
           </form>
         </ModalPanel>
@@ -1596,14 +2165,14 @@ const AdminPage = () => {
                 onChange={(event) => setDesignForm({ ...designForm, responsibleId: event.target.value })}
               >
                 <option value="">Nao definido</option>
-                {employees.map((employee) => (
+                {activeEmployees.map((employee) => (
                   <option key={employee.id} value={employee.id}>{employee.name}</option>
                 ))}
               </select>
             </Field>
             <ButtonRow>
               <SecondaryButton type="button" onClick={() => setShowDesignForm(false)}>Cancelar</SecondaryButton>
-              <PrimaryButton type="submit">Criar trabalho</PrimaryButton>
+              <PrimaryButton type="submit" disabled={isSaving}>{isSaving ? 'Salvando...' : 'Criar trabalho'}</PrimaryButton>
             </ButtonRow>
           </form>
         </ModalPanel>
@@ -1696,14 +2265,14 @@ const AdminPage = () => {
                   onChange={(event) => setEditDesignForm({ ...editDesignForm, responsibleId: event.target.value })}
                 >
                   <option value="">Nao definido</option>
-                  {employees.map((employee) => (
+                  {activeEmployees.map((employee) => (
                     <option key={employee.id} value={employee.id}>{employee.name}</option>
                   ))}
                 </select>
               </Field>
               <ButtonRow>
                 <SecondaryButton type="button" onClick={() => setIsEditingDesign(false)}>Cancelar</SecondaryButton>
-                <PrimaryButton type="submit">Salvar alteracoes</PrimaryButton>
+                <PrimaryButton type="submit" disabled={isSaving}>{isSaving ? 'Salvando...' : 'Salvar alteracoes'}</PrimaryButton>
               </ButtonRow>
             </form>
           ) : (
@@ -1736,7 +2305,7 @@ const AdminPage = () => {
 
               <ButtonRow>
                 <SecondaryButton type="button" onClick={() => setIsEditingDesign(true)}>Editar</SecondaryButton>
-                <DangerButton type="button" onClick={deleteDesignTask}>Excluir</DangerButton>
+                <DangerButton type="button" disabled={isSaving} onClick={deleteDesignTask}>Excluir</DangerButton>
               </ButtonRow>
             </>
           )}
@@ -1809,7 +2378,9 @@ const AdminPage = () => {
             </FieldGrid>
             <ButtonRow>
               <SecondaryButton type="button" onClick={closeEmployeeModal}>Cancelar</SecondaryButton>
-              <PrimaryButton type="submit">{isEditing ? 'Salvar alteracoes' : 'Salvar funcionario'}</PrimaryButton>
+              <PrimaryButton type="submit" disabled={isSaving}>
+                {isSaving ? 'Salvando...' : isEditing ? 'Salvar alteracoes' : 'Salvar funcionario'}
+              </PrimaryButton>
             </ButtonRow>
           </form>
         </ModalPanel>
@@ -1819,9 +2390,47 @@ const AdminPage = () => {
 
   const renderDesign = () => (
     <BoardLayout>
+      <FilterBar>
+        <FilterField>
+          Tipo de peca
+          <select
+            value={designFilters.category}
+            onChange={(event) => setDesignFilters({ ...designFilters, category: event.target.value })}
+          >
+            <option value="ALL">Todos</option>
+            {designCategories.map((category) => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+        </FilterField>
+        <FilterField>
+          Prioridade
+          <select
+            value={designFilters.priority}
+            onChange={(event) => setDesignFilters({ ...designFilters, priority: event.target.value })}
+          >
+            <option value="ALL">Todas</option>
+            {Object.entries(priorityLabels).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
+        </FilterField>
+        <FilterField>
+          Responsavel
+          <select
+            value={designFilters.responsibleId}
+            onChange={(event) => setDesignFilters({ ...designFilters, responsibleId: event.target.value })}
+          >
+            <option value="ALL">Todos</option>
+            {employees.map((employee) => (
+              <option key={employee.id} value={employee.id}>{employee.name}</option>
+            ))}
+          </select>
+        </FilterField>
+      </FilterBar>
       <DesignBoard>
         {designColumns.map(([status, label], columnIndex) => {
-          const items = designItems.filter((item) => item.status === status);
+          const items = filteredDesignItems.filter((item) => item.status === status);
           return (
             <BoardColumn
               key={status}
@@ -1840,10 +2449,12 @@ const AdminPage = () => {
               </h2>
               {items.length ? items.map((item, index) => (
                 <DesignCard
+                  id={`result-design-${item.id}`}
                   key={item.id}
                   draggable
                   $color={palette[(columnIndex + index) % palette.length]}
                   $dragging={draggingDesignId === item.id}
+                  $highlight={highlightedResult?.type === 'design' && highlightedResult.id === item.id}
                   onDragStart={(event) => startDesignDrag(event, item)}
                   onDragEnd={() => {
                     setDraggingDesignId(null);
@@ -1886,10 +2497,25 @@ const AdminPage = () => {
 
   const renderEquipe = () => (
     <BoardLayout>
+      <FilterBar>
+        <FilterField>
+          Status
+          <select value={employeeFilter} onChange={(event) => setEmployeeFilter(event.target.value)}>
+            <option value="ALL">Todos</option>
+            <option value="ACTIVE">Ativos</option>
+            <option value="INACTIVE">Inativos</option>
+          </select>
+        </FilterField>
+      </FilterBar>
       <LightPanel>
         <h2>Equipe cadastrada</h2>
-        {employees.length ? employees.map((employee) => (
-          <Row key={employee.id} $columns="1.2fr 1fr 120px 160px">
+        {filteredEmployees.length ? filteredEmployees.map((employee) => (
+          <Row
+            id={`result-equipe-${employee.id}`}
+            key={employee.id}
+            $columns="1.2fr 1fr 120px 160px"
+            $highlight={highlightedResult?.type === 'equipe' && highlightedResult.id === employee.id}
+          >
             <div>
               <strong>{employee.name}</strong>
               <span>{employee.phoneNumber}</span>
@@ -1898,13 +2524,13 @@ const AdminPage = () => {
               <strong>{employee.roleName || 'Sem funcao'}</strong>
               <span>{employee.active ? 'Disponivel' : 'Inativo'}</span>
             </div>
-            <Pill>{employee.active ? 'Ativo' : 'Inativo'}</Pill>
+            <StatusPill $active={employee.active}>{employee.active ? 'Ativo' : 'Inativo'}</StatusPill>
             <RowActions>
               <SmallEditButton type="button" onClick={() => openEmployeeEditor(employee)}>Editar</SmallEditButton>
-              <SmallDangerButton type="button" onClick={() => deleteEmployee(employee)}>Excluir</SmallDangerButton>
+              <SmallDangerButton type="button" disabled={isSaving} onClick={() => deleteEmployee(employee)}>Excluir</SmallDangerButton>
             </RowActions>
           </Row>
-        )) : <Empty>Nenhum funcionario cadastrado.</Empty>}
+        )) : <Empty>Nenhum funcionario encontrado.</Empty>}
       </LightPanel>
     </BoardLayout>
   );
@@ -1912,6 +2538,14 @@ const AdminPage = () => {
   const monthBase = new Date(`${selectedDate}T00:00:00`);
   const miniDays = Array.from({ length: daysInMonth(monthBase) }, (_, index) => index + 1);
   const miniBlanks = Array.from({ length: new Date(monthBase.getFullYear(), monthBase.getMonth(), 1).getDay() });
+  const monthAgendaDates = new Set(
+    coverageItems
+      .filter((item) => {
+        const date = new Date(`${item.eventDate}T00:00:00`);
+        return date.getFullYear() === monthBase.getFullYear() && date.getMonth() === monthBase.getMonth();
+      })
+      .map((item) => item.eventDate)
+  );
   const activeTitle = {
     agenda: monthTitle(monthBase),
     design: 'Design',
@@ -1968,13 +2602,18 @@ const AdminPage = () => {
               </MiniNav>
             </MiniHeader>
             <MiniMonth>
-              {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((day) => <span key={day}>{day}</span>)}
+              {['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map((day, index) => <span key={`${day}-${index}`}>{day}</span>)}
               {miniBlanks.map((_, index) => <MiniBlank key={`blank-${index}`} />)}
               {miniDays.map((day) => {
                 const date = new Date(monthBase.getFullYear(), monthBase.getMonth(), day);
                 const iso = toIsoDate(date);
                 return (
-                  <MiniDay key={day} $active={iso === selectedDate} onClick={() => setSelectedDate(iso)}>
+                  <MiniDay
+                    key={day}
+                    $active={iso === selectedDate}
+                    $hasItems={monthAgendaDates.has(iso)}
+                    onClick={() => setSelectedDate(iso)}
+                  >
                     {day}
                   </MiniDay>
                 );
@@ -2017,21 +2656,30 @@ const AdminPage = () => {
         <MainPanel>
           <Header>
             <h1>{activeTitle}</h1>
-            {activeTab === 'agenda' && (
-              <HeaderAction type="button" onClick={() => setShowPautaForm(true)}>Nova pauta</HeaderAction>
-            )}
-            {activeTab === 'design' && (
-              <HeaderAction type="button" onClick={() => setShowDesignForm(true)}>Novo card</HeaderAction>
-            )}
-            {activeTab === 'equipe' && (
-              <HeaderAction type="button" onClick={() => setShowEmployeeForm(true)}>Novo funcionario</HeaderAction>
-            )}
+            <HeaderTools>
+              {renderSearch()}
+              {activeTab === 'agenda' && (
+                <HeaderAction type="button" onClick={() => setShowPautaForm(true)}>Nova pauta</HeaderAction>
+              )}
+              {activeTab === 'design' && (
+                <HeaderAction type="button" onClick={() => setShowDesignForm(true)}>Novo card</HeaderAction>
+              )}
+              {activeTab === 'equipe' && (
+                <HeaderAction type="button" onClick={() => setShowEmployeeForm(true)}>Novo funcionario</HeaderAction>
+              )}
+            </HeaderTools>
           </Header>
           <Content>
-            {notice && <Notice>{notice}</Notice>}
-            {activeTab === 'agenda' && renderAgenda()}
-            {activeTab === 'design' && renderDesign()}
-            {activeTab === 'equipe' && renderEquipe()}
+            {notice && <Notice $type={notice.type}>{notice.message}</Notice>}
+            {isLoading ? (
+              <LoadingState>Carregando dados do painel...</LoadingState>
+            ) : (
+              <>
+                {activeTab === 'agenda' && renderAgenda()}
+                {activeTab === 'design' && renderDesign()}
+                {activeTab === 'equipe' && renderEquipe()}
+              </>
+            )}
             {renderEventDetails()}
             {renderDesignDetails()}
             {renderPautaFormModal()}

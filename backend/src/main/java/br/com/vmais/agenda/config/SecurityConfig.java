@@ -39,7 +39,7 @@ public class SecurityConfig {
   @Bean
   CorsConfigurationSource corsConfigurationSource(AppProperties properties) {
     CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(properties.getAllowedOrigins());
+    config.setAllowedOriginPatterns(properties.getAllowedOrigins());
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
     config.setExposedHeaders(List.of("Authorization"));

@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MarketingPage from './pages/MarketingPage';
 import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/AdminPage';
+import SessionExpiredPage from './pages/SessionExpiredPage';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -58,6 +59,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<MarketingPage />} />
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/session-expired" element={<SessionExpiredPage />} />
                 <Route path="/admin" element={<AdminPage />} />
               </Routes>
             </BrowserRouter>

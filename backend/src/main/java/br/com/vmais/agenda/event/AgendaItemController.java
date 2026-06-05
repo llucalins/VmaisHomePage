@@ -70,7 +70,7 @@ public class AgendaItemController {
 
   @PutMapping("/{id}")
   public AgendaItemResponse update(@PathVariable UUID id, @Valid @RequestBody AgendaItemRequest request) {
-    AgendaItem item = agendaItems.findById(id)
+    AgendaItem item = agendaItems.findDetailedById(id)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item de agenda nao encontrado"));
     apply(item, request);
     return AgendaItemResponse.from(agendaItems.save(item));
@@ -78,7 +78,7 @@ public class AgendaItemController {
 
   @PatchMapping("/{id}/status")
   public AgendaItemResponse updateStatus(@PathVariable UUID id, @Valid @RequestBody StatusRequest request) {
-    AgendaItem item = agendaItems.findById(id)
+    AgendaItem item = agendaItems.findDetailedById(id)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item de agenda nao encontrado"));
     item.setStatus(request.status());
     return AgendaItemResponse.from(agendaItems.save(item));
@@ -108,6 +108,8 @@ public class AgendaItemController {
     item.setPriority(request.priority() == null ? Priority.NORMAL : request.priority());
     item.setWorkType(request.workType() == null ? WorkType.COVERAGE : request.workType());
     item.setCategory(request.category() == null || request.category().isBlank() ? null : request.category().trim());
+    item.setMeetingPoint(request.meetingPoint() == null || request.meetingPoint().isBlank() ? null : request.meetingPoint().trim());
+    item.setNotes(request.notes() == null || request.notes().isBlank() ? null : request.notes().trim());
     item.setWhatsappGroupName(request.whatsappGroupName());
     item.setReminderMinutesBefore(request.reminderMinutesBefore());
     item.setSector(sector);
@@ -141,6 +143,8 @@ public class AgendaItemController {
       Priority priority,
       WorkType workType,
       String category,
+      String meetingPoint,
+      String notes,
       UUID sectorId,
       UUID responsibleId,
       String whatsappGroupName,
@@ -172,6 +176,8 @@ public class AgendaItemController {
       Priority priority,
       WorkType workType,
       String category,
+      String meetingPoint,
+      String notes,
       UUID sectorId,
       String sectorName,
       String sectorColor,
@@ -194,6 +200,8 @@ public class AgendaItemController {
           item.getPriority(),
           item.getWorkType(),
           item.getCategory(),
+          item.getMeetingPoint(),
+          item.getNotes(),
           sector == null ? null : sector.getId(),
           sector == null ? null : sector.getName(),
           sector == null ? null : sector.getColor(),

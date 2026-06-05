@@ -20,11 +20,11 @@ public class JwtService {
     this.key = Keys.hmacShaKeyFor(properties.getJwtSecret().getBytes(StandardCharsets.UTF_8));
   }
 
-  public String generate(AdminUser admin) {
+  public GeneratedToken generate(AdminUser admin) {
     Instant now = Instant.now();
     Instant expiresAt = now.plusSeconds(properties.getJwtExpirationMinutes() * 60);
 
-    return Jwts.builder()
+    String token = Jwts.builder()
         .subject(admin.getEmail())
         .claim("adminId", admin.getId().toString())
         .claim("role", admin.getRole())
@@ -32,6 +32,8 @@ public class JwtService {
         .expiration(Date.from(expiresAt))
         .signWith(key)
         .compact();
+
+    return new GeneratedToken(token, expiresAt);
   }
 
   public String subject(String token) {
@@ -44,5 +46,8 @@ public class JwtService {
         .build()
         .parseSignedClaims(token)
         .getPayload();
+  }
+
+  public record GeneratedToken(String token, Instant expiresAt) {
   }
 }

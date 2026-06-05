@@ -6,6 +6,7 @@ import br.com.vmais.agenda.config.JwtService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import java.time.Instant;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -41,7 +42,8 @@ public class AuthController {
         .filter(user -> passwordEncoder.matches(request.password(), user.getPasswordHash()))
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Credenciais invalidas"));
 
-    return new LoginResponse(jwtService.generate(admin), AdminResponse.from(admin));
+    JwtService.GeneratedToken token = jwtService.generate(admin);
+    return new LoginResponse(token.token(), token.expiresAt(), AdminResponse.from(admin));
   }
 
   @GetMapping("/me")
@@ -54,7 +56,7 @@ public class AuthController {
       @NotBlank String password) {
   }
 
-  public record LoginResponse(String token, AdminResponse admin) {
+  public record LoginResponse(String token, Instant expiresAt, AdminResponse admin) {
   }
 
   public record AdminResponse(UUID id, String email, String displayName, String role) {
