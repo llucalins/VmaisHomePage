@@ -5,6 +5,7 @@ import br.com.vmais.agenda.employee.Employee;
 import br.com.vmais.agenda.employee.EmployeeRepository;
 import br.com.vmais.agenda.sector.Sector;
 import br.com.vmais.agenda.sector.SectorRepository;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -69,9 +70,12 @@ public class AgendaItemController {
   }
 
   @PutMapping("/{id}")
+  @Transactional
   public AgendaItemResponse update(@PathVariable UUID id, @Valid @RequestBody AgendaItemRequest request) {
     AgendaItem item = agendaItems.findDetailedById(id)
         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item de agenda nao encontrado"));
+    item.getAssignments().clear();
+    agendaItems.flush();
     apply(item, request);
     return AgendaItemResponse.from(agendaItems.save(item));
   }

@@ -43,25 +43,43 @@ const BrandPanel = styled.section`
   }
 `;
 
-const BrandTop = styled.div`
+const BackHomeButton = styled.button`
   position: relative;
   z-index: 2;
   display: flex;
   align-items: center;
-  gap: 14px;
-  font-weight: 800;
-  text-transform: uppercase;
-`;
-
-const MiniMark = styled.div`
-  display: grid;
-  place-items: center;
   width: 44px;
   height: 44px;
+  justify-content: center;
   border: 2px solid #fff;
   border-radius: 8px;
-  font-size: 1.4rem;
-  line-height: 1;
+  background: transparent;
+  color: #fff;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+
+  &::before {
+    content: '';
+    width: 13px;
+    height: 13px;
+    border-left: 3px solid currentColor;
+    border-bottom: 3px solid currentColor;
+    transform: rotate(45deg) translate(2px, -2px);
+  }
+
+  &:hover,
+  &:focus-visible {
+    border-color: #e23d32;
+    color: #e23d32;
+    transform: translateX(-2px);
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba(226, 61, 50, 0.28);
+    outline-offset: 3px;
+  }
 `;
 
 const MotionStage = styled.div`
@@ -289,10 +307,11 @@ const LoginPage = () => {
   return (
     <Page>
       <BrandPanel>
-        <BrandTop>
-          <MiniMark>+</MiniMark>
-          <span>Vmais Comunicacao</span>
-        </BrandTop>
+        <BackHomeButton
+          aria-label="Voltar para a pagina inicial"
+          onClick={() => navigate('/')}
+          type="button"
+        />
         <MotionStage>
           <LogoOrbit>
             <MainLogo>

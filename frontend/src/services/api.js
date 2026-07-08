@@ -22,6 +22,7 @@ export const authStorage = {
   },
   setSession(session) {
     localStorage.setItem(TOKEN_KEY, session.token);
+    localStorage.removeItem(EXPIRES_AT_KEY);
     if (session.expiresAt) {
       localStorage.setItem(EXPIRES_AT_KEY, session.expiresAt);
     }
@@ -89,12 +90,13 @@ export async function apiRequest(path, options = {}) {
       404: 'Registro nao encontrado. Atualize a pagina e tente novamente.',
       500: 'Erro interno da API. Tente novamente em instantes.'
     };
-    if (response.status === 401 || response.status === 403) {
+    const isSessionExpired = response.status === 401 || (path === '/auth/me' && response.status === 403);
+    if (isSessionExpired) {
       authStorage.clear();
     }
     throw new ApiError(message || fallbackMessages[response.status] || `Erro ${response.status}`, {
       status: response.status,
-      code: response.status === 401 || response.status === 403 ? 'AUTH' : 'HTTP'
+      code: isSessionExpired ? 'AUTH' : response.status === 403 ? 'FORBIDDEN' : 'HTTP'
     });
   }
 

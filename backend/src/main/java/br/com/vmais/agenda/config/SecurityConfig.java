@@ -1,6 +1,7 @@
 package br.com.vmais.agenda.config;
 
 import java.util.List;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -28,6 +29,11 @@ public class SecurityConfig {
         .csrf(csrf -> csrf.disable())
         .cors(cors -> cors.configurationSource(corsConfigurationSource))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .exceptionHandling(exceptions -> exceptions
+            .authenticationEntryPoint((request, response, exception) ->
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED))
+            .accessDeniedHandler((request, response, exception) ->
+                response.sendError(HttpServletResponse.SC_FORBIDDEN)))
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers("/api/auth/login").permitAll()

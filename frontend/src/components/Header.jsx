@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
 
 const HeaderContainer = styled(motion.header)`
   position: fixed;
@@ -151,27 +150,6 @@ const MobileMenuButton = styled.button`
     height: 2px;
     background: ${props => props.scrolled ? '#000' : '#fff'};
     transition: all 0.3s ease;
-  }
-`;
-
-const AdminLink = styled(Link)`
-  border: 1px solid ${props => props.scrolled ? '#000' : '#fff'};
-  border-radius: 6px;
-  color: ${props => props.scrolled ? '#000' : '#fff'};
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 1px;
-  padding: 9px 12px;
-  text-transform: uppercase;
-  transition: all 0.3s ease;
-
-  &:hover {
-    background: ${props => props.scrolled ? '#000' : '#fff'};
-    color: ${props => props.scrolled ? '#fff' : '#000'};
-  }
-
-  @media (max-width: 768px) {
-    display: none;
   }
 `;
 
@@ -379,8 +357,6 @@ const Header = () => {
           ))}
         </MenuItems>
 
-        <AdminLink scrolled={scrolled} to="/login">Admin</AdminLink>
-
         <MobileMenuButton 
           scrolled={scrolled}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -410,9 +386,6 @@ const Header = () => {
                 {item}
               </MobileMenuItem>
             ))}
-            <MobileMenuItem as={Link} to="/login" onClick={() => setMobileMenuOpen(false)}>
-              ADMIN
-            </MobileMenuItem>
           </MobileMenu>
         )}
       </AnimatePresence>
