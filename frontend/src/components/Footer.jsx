@@ -119,8 +119,8 @@ const Footer = () => (
 
         <ContactBlock>
           <strong>Contato</strong>
-          <a href="mailto:contato@vmais.com.br">contato@vmais.com.br</a>
-          <span>São Paulo, SP - Brasil</span>
+          <a href="mailto:agenciavmaiscomunicacao@gmail.com">agenciavmaiscomunicacao@gmail.com</a>
+          <span>Esperança, PB - Brasil</span>
         </ContactBlock>
       </FooterContent>
 

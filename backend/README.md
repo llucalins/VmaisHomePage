@@ -39,6 +39,7 @@ Troque essas credenciais em producao usando `VMAIS_ADMIN_EMAIL`, `VMAIS_ADMIN_PA
 ## Endpoints principais
 
 - `POST /api/auth/login`
+- `POST /api/contact-messages`
 - `GET /api/auth/me`
 - `GET/POST/PUT /api/sectors`
 - `GET/POST/PUT /api/employees`

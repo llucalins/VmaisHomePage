@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
+import { submitContactMessage } from '../services/api';
 
 const ContactSection = styled.section`
   padding: 120px 0;
@@ -58,6 +59,16 @@ const ContactItem = styled.div`
     width: 20px;
     height: 20px;
     opacity: 0.7;
+  }
+
+  a {
+    color: inherit;
+    transition: opacity 0.2s ease;
+  }
+
+  a:hover,
+  a:focus-visible {
+    opacity: 0.72;
   }
 `;
 
@@ -143,12 +154,27 @@ const SubmitButton = styled(motion.button)`
     color: #fff;
     border: 2px solid #fff;
   }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+  }
 `;
 
 const SuccessMessage = styled(motion.div)`
   background: rgba(76, 175, 80, 0.2);
   border: 1px solid rgba(76, 175, 80, 0.5);
   color: #4caf50;
+  padding: 20px;
+  border-radius: 4px;
+  margin-top: 20px;
+  text-align: center;
+`;
+
+const ErrorMessage = styled(motion.div)`
+  background: rgba(225, 29, 46, 0.18);
+  border: 1px solid rgba(225, 29, 46, 0.48);
+  color: #ffb8b8;
   padding: 20px;
   border-radius: 4px;
   margin-top: 20px;
@@ -164,6 +190,8 @@ const Contact = () => {
     message: ''
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const handleChange = (e) => {
     setFormData({
@@ -172,10 +200,14 @@ const Contact = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simular envio do formulário
-    setTimeout(() => {
+    setIsSubmitting(true);
+    setIsSubmitted(false);
+    setSubmitError('');
+
+    try {
+      await submitContactMessage(formData);
       setIsSubmitted(true);
       setFormData({
         name: '',
@@ -184,7 +216,11 @@ const Contact = () => {
         service: '',
         message: ''
       });
-    }, 1000);
+    } catch (error) {
+      setSubmitError(error.message || 'Nao foi possivel enviar sua mensagem. Tente novamente em instantes.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -203,7 +239,7 @@ const Contact = () => {
               Você é um talento querendo se juntar a nós?
             </p>
             <p>
-              Envie-nos uma mensagem em <strong>contato@vmais.com.br</strong>. 
+              Envie-nos uma mensagem em <strong>agenciavmaiscomunicacao@gmail.com</strong>. 
               Retornaremos o mais rápido possível.
             </p>
 
@@ -212,20 +248,20 @@ const Contact = () => {
                 <svg fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                 </svg>
-                São Paulo, SP - Brasil
+                Esperança, PB - Brasil
               </ContactItem>
               <ContactItem>
                 <svg fill="currentColor" viewBox="0 0 20 20">
                   <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                   <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                 </svg>
-                contato@vmais.com.br
+                <a href="mailto:agenciavmaiscomunicacao@gmail.com">agenciavmaiscomunicacao@gmail.com</a>
               </ContactItem>
               <ContactItem>
                 <svg fill="currentColor" viewBox="0 0 20 20">
                   <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                 </svg>
-                +55 (11) 99999-9999
+                <a href="tel:+5583986761617">(83) 98676-1617</a>
               </ContactItem>
             </ContactDetails>
           </ContactInfo>
@@ -300,12 +336,23 @@ const Contact = () => {
             </FormGroup>
 
             <SubmitButton
+              disabled={isSubmitting}
               type="submit"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              Enviar Mensagem
+              {isSubmitting ? 'Enviando...' : 'Enviar Mensagem'}
             </SubmitButton>
+
+            {submitError && (
+              <ErrorMessage
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                {submitError}
+              </ErrorMessage>
+            )}
 
             {isSubmitted && (
               <SuccessMessage

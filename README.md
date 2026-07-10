@@ -110,6 +110,20 @@ VMAIS_ADMIN_EMAIL=...
 VMAIS_ADMIN_PASSWORD=...
 ```
 
+O formulario de contato publica em `POST /api/contact-messages`. Por padrao, a API salva as mensagens no banco. Para tambem enviar email, configure SMTP e habilite:
+
+```text
+CONTACT_RECIPIENT_EMAIL=agenciavmaiscomunicacao@gmail.com
+CONTACT_FROM_EMAIL=agenciavmaiscomunicacao@gmail.com
+CONTACT_MAIL_ENABLED=true
+SPRING_MAIL_HOST=smtp.gmail.com
+SPRING_MAIL_PORT=587
+SPRING_MAIL_USERNAME=agenciavmaiscomunicacao@gmail.com
+SPRING_MAIL_PASSWORD=sua-senha-de-app
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+```
+
 4. Suba a stack:
 
 ```bash

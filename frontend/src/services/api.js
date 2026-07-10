@@ -3,6 +3,7 @@ const TOKEN_KEY = 'vmais_admin_token';
 const ADMIN_KEY = 'vmais_admin_profile';
 const EXPIRES_AT_KEY = 'vmais_admin_expires_at';
 const SESSION_EXPIRED_MESSAGE = 'Sua sessao expirou. Faca login novamente.';
+const PUBLIC_PATHS = ['/auth/login', '/contact-messages'];
 
 export const authStorage = {
   getToken() {
@@ -54,7 +55,9 @@ export class ApiError extends Error {
 }
 
 export async function apiRequest(path, options = {}) {
-  if (path !== '/auth/login' && authStorage.getToken() && authStorage.isExpired()) {
+  const isPublicPath = PUBLIC_PATHS.includes(path);
+
+  if (!isPublicPath && authStorage.getToken() && authStorage.isExpired()) {
     authStorage.clear();
     throw new ApiError(SESSION_EXPIRED_MESSAGE, {
       status: 401,
@@ -62,7 +65,7 @@ export async function apiRequest(path, options = {}) {
     });
   }
 
-  const token = authStorage.getToken();
+  const token = isPublicPath ? null : authStorage.getToken();
   let response;
 
   try {
@@ -116,4 +119,11 @@ export function login(email, password) {
 
 export function validateSession() {
   return apiRequest('/auth/me');
+}
+
+export function submitContactMessage(message) {
+  return apiRequest('/contact-messages', {
+    method: 'POST',
+    body: JSON.stringify(message)
+  });
 }
