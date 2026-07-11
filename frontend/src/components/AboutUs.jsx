@@ -361,7 +361,7 @@ const AboutUs = () => {
                 A <span className="highlight">Vmais Comunicação</span> nasceu para transformar ideias em resultados. Somos uma agência de publicidade e produtora de vídeo com atuação regional e visão de expansão, especializada em criar estratégias criativas que aproximam marcas do seu público.
               </p>
               <p>
-                Unimos clareza, agilidade e profissionalismo para entregar soluções completas em marketing, gestão de redes sociais, produção audiovisual, design e comunicação institucional. Nosso diferencial está na produção interna de conteúdos e na presença do fundador, <span className="highlight">Valdy Lins</span>, como rosto da marca, fortalecendo a confiança e a proximidade com cada cliente.
+                Unimos clareza, agilidade e profissionalismo para entregar soluções completas em marketing, gestão de redes sociais, produção audiovisual, design e comunicação institucional. Nosso diferencial está na produção interna de conteúdos e na presença dos fundadores, <span className="highlight">Valdy Lins</span> e <span className="highlight">Kassia Jane</span>, como rostos da marca, fortalecendo a confiança e a proximidade com cada cliente.
               </p>
               <p>
                 Acreditamos que cada projeto é único e merece ser tratado com dedicação e estratégia. Por isso, trabalhamos lado a lado com pequenos e médios empresários, instituições públicas e influenciadores locais, ajudando-os a se destacar em um mercado cada vez mais competitivo.
