@@ -1,11 +1,11 @@
 services:
   backend:
-    build:
-      context: ../backend
-      dockerfile: Dockerfile.prod
+    image: ghcr.io/${GHCR_IMAGE_OWNER}/vmais-homepage-backend:latest
+    pull_policy: always
     container_name: vmais-agenda-backend-prod
     environment:
       PORT: 8080
+      SPRING_PROFILES_ACTIVE: prod
       DATABASE_URL: ${DATABASE_URL}
       DATABASE_USERNAME: ${DATABASE_USERNAME}
       DATABASE_PASSWORD: ${DATABASE_PASSWORD}
@@ -29,11 +29,8 @@ services:
     restart: unless-stopped
 
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile.prod
-      args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+    image: ghcr.io/${GHCR_IMAGE_OWNER}/vmais-homepage-frontend:latest
+    pull_policy: always
     container_name: vmais-agenda-frontend-prod
     depends_on:
       - backend
