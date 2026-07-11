@@ -25,59 +25,19 @@ const Nav = styled.nav`
 
 const LogoContainer = styled(motion.div)`
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   cursor: pointer;
   position: relative;
 `;
 
-const LogoMain = styled(motion.div)`
-  font-size: 2rem;
-  font-weight: 700;
-  color: ${props => props.scrolled ? '#000' : '#fff'};
-  text-transform: uppercase;
-  letter-spacing: -1px;
-  position: relative;
-  display: flex;
-  align-items: center;
-`;
-
-const LetterV = styled(motion.span)`
-  font-size: 2.2rem;
-  margin-right: 2px;
-`;
-
-const LetterA = styled(motion.span)`
-  position: relative;
-  display: inline-block;
-  
-  &::after {
-    content: '+';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 0.8rem;
-    font-weight: 900;
-    color: ${props => props.scrolled ? '#000' : '#fff'};
-    opacity: 0;
-    transition: all 0.3s ease;
-  }
-  
-  &:hover::after {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.2);
-  }
-`;
-
-const LogoSubtitle = styled(motion.div)`
-  font-size: 0.7rem;
-  font-weight: 300;
-  color: ${props => props.scrolled ? '#000' : '#fff'};
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-top: -2px;
-  opacity: 0.8;
+const LogoImage = styled(motion.img)`
+  display: block;
+  width: auto;
+  height: clamp(40px, 5vw, 58px);
+  max-width: min(230px, 48vw);
+  object-fit: contain;
+  filter: ${props => props.scrolled ? 'brightness(0)' : 'none'};
+  transition: filter 0.3s ease, opacity 0.3s ease;
 `;
 
 const LogoGlow = styled(motion.div)`
@@ -247,26 +207,6 @@ const Header = () => {
     }
   };
 
-  const letterVariants = {
-    initial: { opacity: 0, x: -20 },
-    animate: (i) => ({
-      opacity: 1,
-      x: 0,
-      transition: {
-        delay: i * 0.1,
-        duration: 0.6,
-        ease: "easeOut"
-      }
-    }),
-    hover: {
-      y: -2,
-      transition: {
-        duration: 0.2,
-        ease: "easeInOut"
-      }
-    }
-  };
-
   const glowVariants = {
     initial: { opacity: 0, scale: 0.8 },
     animate: { 
@@ -313,65 +253,14 @@ const Header = () => {
             animate="animate"
             whileHover="hover"
           />
-          <LogoMain scrolled={scrolled}>
-            <LetterV
-              custom={0}
-              variants={letterVariants}
-              initial="initial"
-              animate="animate"
-              whileHover="hover"
-            >
-              V
-            </LetterV>
-            <LetterA
-              custom={1}
-              variants={letterVariants}
-              initial="initial"
-              animate="animate"
-              whileHover="hover"
-              scrolled={scrolled}
-            >
-              m
-            </LetterA>
-            <LetterA
-              custom={2}
-              variants={letterVariants}
-              initial="initial"
-              animate="animate"
-              whileHover="hover"
-              scrolled={scrolled}
-            >
-              a
-            </LetterA>
-            <LetterA
-              custom={3}
-              variants={letterVariants}
-              initial="initial"
-              animate="animate"
-              whileHover="hover"
-              scrolled={scrolled}
-            >
-              i
-            </LetterA>
-            <LetterA
-              custom={4}
-              variants={letterVariants}
-              initial="initial"
-              animate="animate"
-              whileHover="hover"
-              scrolled={scrolled}
-            >
-              s
-            </LetterA>
-          </LogoMain>
-          <LogoSubtitle
+          <LogoImage
             scrolled={scrolled}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 0.8, y: 0 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
-          >
-            Comunicação
-          </LogoSubtitle>
+            src="/Images/LOGO%20VMAIS%20COMUNICA%C3%87%C3%83O%20BRANCA.png"
+            alt="Vmais Comunicação"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+          />
         </LogoContainer>
         
         <MenuItems>
