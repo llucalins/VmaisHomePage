@@ -7,6 +7,12 @@ export default defineConfig({
       include: /\.[jt]sx?$/
     })
   ],
+  preview: {
+    allowedHosts: [
+      'vmaiscomunicacao.com.br',
+      'www.vmaiscomunicacao.com.br'
+    ]
+  },
   optimizeDeps: {
     esbuildOptions: {
       loader: {
