@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { submitContactMessage } from '../services/api';
@@ -7,6 +8,7 @@ const ContactSection = styled.section`
   padding: 120px 0;
   background: #000;
   color: #fff;
+  scroll-margin-top: 90px;
 `;
 
 const Container = styled.div`
@@ -72,6 +74,36 @@ const ContactItem = styled.div`
   }
 `;
 
+const WhatsAppLink = styled.a`
+  align-items: center;
+  background: rgba(37, 211, 102, 0.12);
+  border: 1px solid rgba(37, 211, 102, 0.42);
+  border-radius: 999px;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 0.92rem;
+  font-weight: 700;
+  gap: 10px;
+  line-height: 1;
+  margin-top: 8px;
+  padding: 13px 18px;
+  text-decoration: none;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  width: fit-content;
+
+  svg {
+    height: 20px;
+    width: 20px;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(37, 211, 102, 0.22);
+    border-color: rgba(37, 211, 102, 0.72);
+    transform: translateY(-2px);
+  }
+`;
+
 const ContactForm = styled(motion.form)`
   background: rgba(255, 255, 255, 0.05);
   padding: 50px;
@@ -82,6 +114,28 @@ const ContactForm = styled(motion.form)`
 
 const FormGroup = styled.div`
   margin-bottom: 30px;
+`;
+
+const ConsentGroup = styled.label`
+  align-items: flex-start;
+  color: rgba(255, 255, 255, 0.72);
+  display: flex;
+  font-size: 0.84rem;
+  gap: 12px;
+  line-height: 1.55;
+  margin: -6px 0 28px;
+
+  input {
+    accent-color: #ffffff;
+    flex: 0 0 auto;
+    margin-top: 4px;
+  }
+
+  a {
+    color: #ffffff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
 `;
 
 const Label = styled.label`
@@ -181,22 +235,31 @@ const ErrorMessage = styled(motion.div)`
   text-align: center;
 `;
 
+const WhatsAppIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M12.04 2C6.57 2 2.12 6.35 2.12 11.7c0 1.72.47 3.4 1.35 4.87L2 22l5.58-1.43a10.14 10.14 0 004.46 1.03c5.47 0 9.92-4.35 9.92-9.7S17.51 2 12.04 2zm0 17.95c-1.43 0-2.83-.36-4.06-1.05l-.29-.16-3.31.85.88-3.16-.19-.31a8.05 8.05 0 01-1.3-4.42c0-4.44 3.71-8.05 8.27-8.05s8.27 3.61 8.27 8.05-3.71 8.25-8.27 8.25zm4.54-6.04c-.25-.12-1.47-.71-1.7-.79-.23-.08-.4-.12-.56.12-.17.24-.65.79-.79.95-.15.16-.29.18-.54.06-.25-.12-1.05-.38-2-1.21-.74-.64-1.24-1.43-1.38-1.67-.15-.24-.02-.38.11-.5.11-.11.25-.29.37-.43.12-.14.17-.24.25-.4.08-.16.04-.3-.02-.43-.06-.12-.56-1.32-.77-1.81-.2-.47-.41-.41-.56-.42h-.48c-.17 0-.43.06-.66.3-.23.24-.87.83-.87 2.03s.89 2.36 1.02 2.52c.12.16 1.75 2.62 4.25 3.67.59.25 1.06.4 1.42.51.6.19 1.14.16 1.57.1.48-.07 1.47-.59 1.68-1.16.21-.57.21-1.05.15-1.16-.06-.1-.23-.16-.48-.28z" />
+  </svg>
+);
+
 const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     company: '',
     service: '',
-    message: ''
+    message: '',
+    privacyAccepted: false
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
   const handleChange = (e) => {
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: value
     });
   };
 
@@ -214,7 +277,8 @@ const Contact = () => {
         email: '',
         company: '',
         service: '',
-        message: ''
+        message: '',
+        privacyAccepted: false
       });
     } catch (error) {
       setSubmitError(error.message || 'Nao foi possivel enviar sua mensagem. Tente novamente em instantes.');
@@ -224,7 +288,7 @@ const Contact = () => {
   };
 
   return (
-    <ContactSection>
+    <ContactSection id="contact">
       <Container>
         <ContactGrid>
           <ContactInfo
@@ -263,6 +327,15 @@ const Contact = () => {
                 </svg>
                 <a href="tel:+5583986761617">(83) 98676-1617</a>
               </ContactItem>
+              <WhatsAppLink
+                href="https://wa.me/5583986761617?text=Ol%C3%A1%2C%20vim%20pelo%20site%20da%20Vmais%20Comunica%C3%A7%C3%A3o%20e%20gostaria%20de%20conversar."
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Conversar com a Vmais Comunicação pelo WhatsApp"
+              >
+                <WhatsAppIcon />
+                Conversar pelo WhatsApp
+              </WhatsAppLink>
             </ContactDetails>
           </ContactInfo>
 
@@ -334,6 +407,20 @@ const Contact = () => {
                 required
               />
             </FormGroup>
+
+            <ConsentGroup htmlFor="privacyAccepted">
+              <input
+                id="privacyAccepted"
+                name="privacyAccepted"
+                type="checkbox"
+                checked={formData.privacyAccepted}
+                onChange={handleChange}
+                required
+              />
+              <span>
+                Li e concordo com a <Link to="/privacidade">Política de Privacidade</Link> e autorizo a Vmais Comunicação a tratar meus dados para responder esta solicitação.
+              </span>
+            </ConsentGroup>
 
             <SubmitButton
               disabled={isSubmitting}

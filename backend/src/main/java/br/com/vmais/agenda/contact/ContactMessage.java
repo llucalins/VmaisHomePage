@@ -31,6 +31,9 @@ public class ContactMessage {
   @Column(nullable = false, columnDefinition = "text")
   private String message;
 
+  @Column(name = "privacy_accepted_at", nullable = false)
+  private Instant privacyAcceptedAt;
+
   @Column(name = "created_at", nullable = false)
   private Instant createdAt;
 
@@ -83,6 +86,14 @@ public class ContactMessage {
 
   public void setMessage(String message) {
     this.message = message;
+  }
+
+  public Instant getPrivacyAcceptedAt() {
+    return privacyAcceptedAt;
+  }
+
+  public void setPrivacyAcceptedAt(Instant privacyAcceptedAt) {
+    this.privacyAcceptedAt = privacyAcceptedAt;
   }
 
   public Instant getCreatedAt() {

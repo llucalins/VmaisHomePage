@@ -6,6 +6,7 @@ import MarketingPage from './pages/MarketingPage';
 import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/AdminPage';
 import SessionExpiredPage from './pages/SessionExpiredPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 
 const AppContainer = styled.div`
   min-height: 100vh;
@@ -58,6 +59,7 @@ function App() {
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<MarketingPage />} />
+                <Route path="/privacidade" element={<PrivacyPolicyPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/session-expired" element={<SessionExpiredPage />} />
                 <Route path="/admin" element={<AdminPage />} />

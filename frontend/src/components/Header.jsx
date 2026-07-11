@@ -93,7 +93,7 @@ const LogoGlow = styled(motion.div)`
   z-index: -1;
 `;
 
-const MenuItems = styled.ul`
+const MenuItems = styled.div`
   display: flex;
   gap: 40px;
   align-items: center;
@@ -103,10 +103,14 @@ const MenuItems = styled.ul`
   }
 `;
 
-const MenuItem = styled.li`
+const MenuItem = styled(motion.button)`
+  background: none;
+  border: 0;
   position: relative;
   cursor: pointer;
+  font: inherit;
   font-weight: 400;
+  padding: 0;
   text-transform: uppercase;
   letter-spacing: 1px;
   font-size: 0.9rem;
@@ -168,7 +172,9 @@ const MobileMenu = styled(motion.div)`
   gap: 30px;
 `;
 
-const MobileMenuItem = styled.div`
+const MobileMenuItem = styled(motion.button)`
+  background: none;
+  border: 0;
   font-size: 2rem;
   font-weight: 300;
   cursor: pointer;
@@ -194,13 +200,33 @@ const Header = () => {
   }, []);
 
   const menuItems = [
-    'QUEM SOMOS',
-    'SOLUÇÕES',
-    'PORTFÓLIO',
-    'CLIENTES',
-    'CONTEÚDOS',
-    'CONTATO'
+    { label: 'QUEM SOMOS', target: 'about' },
+    { label: 'SOLUÇÕES', target: 'services' },
+    { label: 'PORTFÓLIO', target: 'portfolio' },
+    { label: 'CONTATO', target: 'contact' }
   ];
+
+  const scrollToTarget = (target) => {
+    const element = document.getElementById(target);
+
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    setMobileMenuOpen(false);
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setMobileMenuOpen(false);
+  };
+
+  const handleLogoKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      scrollToTop();
+    }
+  };
 
   const logoVariants = {
     initial: { opacity: 0, y: -20 },
@@ -275,6 +301,11 @@ const Header = () => {
           initial="initial"
           animate="animate"
           whileHover="hover"
+          onClick={scrollToTop}
+          onKeyDown={handleLogoKeyDown}
+          role="button"
+          tabIndex={0}
+          aria-label="Ir para o topo"
         >
           <LogoGlow
             variants={glowVariants}
@@ -346,13 +377,15 @@ const Header = () => {
         <MenuItems>
           {menuItems.map((item, index) => (
             <MenuItem 
-              key={index} 
+              key={item.target}
+              type="button"
               scrolled={scrolled}
+              onClick={() => scrollToTarget(item.target)}
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1 + index * 0.1, duration: 0.5 }}
             >
-              {item}
+              {item.label}
             </MenuItem>
           ))}
         </MenuItems>
@@ -377,13 +410,14 @@ const Header = () => {
           >
             {menuItems.map((item, index) => (
               <MobileMenuItem 
-                key={index}
-                onClick={() => setMobileMenuOpen(false)}
+                key={item.target}
+                type="button"
+                onClick={() => scrollToTarget(item.target)}
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1, duration: 0.3 }}
               >
-                {item}
+                {item.label}
               </MobileMenuItem>
             ))}
           </MobileMenu>

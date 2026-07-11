@@ -8,6 +8,7 @@ const ServicesSection = styled.section`
     linear-gradient(180deg, #ffffff 0%, #f6f7f7 100%);
   position: relative;
   overflow: hidden;
+  scroll-margin-top: 90px;
 `;
 
 const Container = styled.div`
@@ -379,13 +380,6 @@ const services = [
     title: 'Mídia',
     description: 'Planejamento e compra de mídia estratégica para maximizar o retorno sobre investimento.',
     signal: 'Performance'
-  },
-  {
-    icon: 'health',
-    accent: '#73A857',
-    title: 'Saúde & Bem-estar',
-    description: 'Comunicação especializada para o setor de saúde e bem-estar.',
-    signal: 'Cuidado'
   },
   {
     icon: 'experience',

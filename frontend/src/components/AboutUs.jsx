@@ -8,6 +8,7 @@ const AboutSection = styled.section`
   background: #fff;
   position: relative;
   overflow: hidden;
+  scroll-margin-top: 90px;
 `;
 
 const BackgroundPattern = styled.div`
@@ -344,7 +345,7 @@ const AboutUs = () => {
   };
 
   return (
-    <AboutSection>
+    <AboutSection id="about">
       <BackgroundPattern />
       <Container>
         <motion.div
@@ -416,7 +417,7 @@ const AboutUs = () => {
               <div className="label">Clientes Satisfeitos</div>
             </StatItem>
             <StatItem>
-              <div className="number"><span className="value">5</span><span className="plus">+</span></div>
+              <div className="number"><span className="value">8</span><span className="plus">+</span></div>
               <div className="label">Anos de Experiência</div>
             </StatItem>
           </StatsContainer>

@@ -1,8 +1,10 @@
 package br.com.vmais.agenda.contact;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 import java.util.UUID;
@@ -35,6 +37,7 @@ public class ContactMessageController {
     contactMessage.setCompany(blankToNull(request.company()));
     contactMessage.setService(blankToNull(request.service()));
     contactMessage.setMessage(request.message().trim());
+    contactMessage.setPrivacyAcceptedAt(Instant.now());
 
     ContactMessage saved = contactMessages.save(contactMessage);
     notificationService.notify(saved);
@@ -50,7 +53,8 @@ public class ContactMessageController {
       @NotBlank @Email @Size(max = 180) String email,
       @Size(max = 160) String company,
       @Size(max = 160) String service,
-      @NotBlank @Size(max = 4000) String message) {
+      @NotBlank @Size(max = 4000) String message,
+      @NotNull @AssertTrue Boolean privacyAccepted) {
   }
 
   public record ContactMessageResponse(UUID id, Instant createdAt) {
