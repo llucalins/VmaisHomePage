@@ -13,7 +13,7 @@
     "build:backend": "cd backend && ./mvnw package",
     "dev:stack": "docker compose -f infra/docker-compose.yml up --build",
     "stop:stack": "docker compose -f infra/docker-compose.yml down",
-    "prod:stack": "docker compose --env-file infra/.env.prod -f infra/docker-compose.prod.yml up -d --build",
+    "prod:stack": "docker compose --env-file infra/.env.prod -f infra/docker-compose.prod.yml pull && docker compose --env-file infra/.env.prod -f infra/docker-compose.prod.yml up -d",
     "prod:logs": "docker compose --env-file infra/.env.prod -f infra/docker-compose.prod.yml logs -f",
     "stop:prod": "docker compose --env-file infra/.env.prod -f infra/docker-compose.prod.yml down",
     "bot:dry-run": "python3 bot/dry_run.py",
