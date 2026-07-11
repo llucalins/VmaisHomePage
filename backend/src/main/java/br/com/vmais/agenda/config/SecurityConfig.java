@@ -1,5 +1,6 @@
 package br.com.vmais.agenda.config;
 
+import jakarta.servlet.DispatcherType;
 import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
@@ -34,6 +35,8 @@ public class SecurityConfig {
             .accessDeniedHandler((request, response, exception) ->
                 response.sendError(HttpServletResponse.SC_FORBIDDEN)))
         .authorizeHttpRequests(auth -> auth
+            .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+            .requestMatchers("/error").permitAll()
             .requestMatchers(PublicEndpoints.matchers()).permitAll()
             .anyRequest().hasRole("ADMIN"))
         .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
