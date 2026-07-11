@@ -64,7 +64,8 @@ class SecurityPublicEndpointsTest {
     mockMvc.perform(post("/api/contact-messages")
             .contentType(MediaType.APPLICATION_JSON)
             .content("{}"))
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isBadRequest())
+        .andExpect(content().string(containsString("privacyAccepted")));
   }
 
   @Test
