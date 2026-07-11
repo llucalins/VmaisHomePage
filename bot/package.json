@@ -1,0 +1,20 @@
+{
+  "name": "vmais-whatsapp-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "worker": "node worker.js",
+    "worker:send": "node worker.js --send",
+    "worker:loop": "node worker.js --send --loop",
+    "groups": "node worker.js --list-groups"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc.13",
+    "pino": "^9.7.0",
+    "qrcode-terminal": "^0.12.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

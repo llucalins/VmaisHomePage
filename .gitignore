@@ -7,6 +7,7 @@ node_modules/
 build/
 dist/
 coverage/
+target/
 
 # Local environment files
 .env
@@ -14,6 +15,12 @@ coverage/
 .env.development.local
 .env.test.local
 .env.production.local
+bot/.env
+bot/auth/
+bot/node_modules/
+bot/__pycache__
+clinfra/.env.prod
+application-local.yml
 
 # Logs
 npm-debug.log*
@@ -21,6 +28,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+*.log
 
 # Tooling caches
 .cache/
@@ -28,6 +36,8 @@ lerna-debug.log*
 .parcel-cache/
 .next/
 .turbo/
+.vite/
+.mvn/wrapper/maven-wrapper.jar
 
 # OS and editor files
 .DS_Store
