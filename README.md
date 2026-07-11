@@ -103,12 +103,14 @@ DATABASE_PASSWORD=SUA_SENHA_NEON
 3. Ajuste tambem:
 
 ```text
+GHCR_IMAGE_OWNER=seu-owner-github-em-lowercase
 CORS_ALLOWED_ORIGINS=http://localhost:4173
-VITE_API_URL=http://localhost:8080/api
 JWT_SECRET=um-segredo-longo-e-unico
 VMAIS_ADMIN_EMAIL=...
 VMAIS_ADMIN_PASSWORD=...
 ```
+
+O frontend publicado no GHCR ja sai buildado com a URL da API. Configure o secret `VITE_API_URL` no GitHub Actions antes de publicar a imagem.
 
 O formulario de contato publica em `POST /api/contact-messages`. Por padrao, a API salva as mensagens no banco. Para tambem enviar email, configure SMTP e habilite:
 
@@ -125,6 +127,14 @@ SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
 ```
 
 4. Suba a stack:
+
+Se as imagens GHCR estiverem privadas, faca login na VM antes:
+
+```bash
+echo SEU_TOKEN_GITHUB | docker login ghcr.io -u SEU_USUARIO_GITHUB --password-stdin
+```
+
+Depois suba a stack:
 
 ```bash
 npm run prod:stack
