@@ -105,9 +105,13 @@ export default function TiltedCard({
         }}
       >
         <motion.img
+          key={imageSrc}
           src={imageSrc}
           alt={altText}
           className="tilted-card-img"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.25 }}
           style={{
             width: imageWidth,
             height: imageHeight

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import TiltedCard from './TiltedCard';
 
 const AboutSection = styled.section`
@@ -128,6 +128,7 @@ const OverlayTop = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 16px;
 `;
 
 const OverlayBadge = styled.div`
@@ -142,24 +143,44 @@ const OverlayBadge = styled.div`
   font-size: 1.4rem;
 `;
 
-const OverlayBrand = styled.div`
-  text-align: center;
-  margin-top: 18px;
+const OverlayControls = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
 `;
 
-const OverlayBrandMain = styled.div`
-  font-size: 4rem;
+const FounderCounter = styled.span`
+  font-size: 0.72rem;
   font-weight: 700;
-  line-height: 1;
-  letter-spacing: -1.5px;
+  letter-spacing: 1.8px;
+  color: rgba(255, 255, 255, 0.82);
 `;
 
-const OverlayBrandSub = styled.div`
-  margin-top: 14px;
-  letter-spacing: 4px;
-  text-transform: uppercase;
-  opacity: 0.8;
-  font-size: 1rem;
+const FounderSwitchButton = styled.button`
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.24);
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  line-height: 1;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    transform: translateX(2px);
+    background: rgba(225, 29, 46, 0.72);
+    border-color: rgba(255, 255, 255, 0.72);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+  }
 `;
 
 const OverlayQuoteBox = styled.div`
@@ -169,6 +190,13 @@ const OverlayQuoteBox = styled.div`
   background: rgba(255, 255, 255, 0.1);
   padding: 26px 30px;
   text-align: center;
+`;
+
+const OverlayFounderInfo = styled(motion.div)`
+  min-height: 148px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 `;
 
 const OverlayQuote = styled.p`
@@ -309,6 +337,29 @@ const StatItem = styled.div`
 `;
 
 const AboutUs = () => {
+  const founders = [
+    {
+      name: 'VALDY LINS',
+      image: '/Images/file.jpg',
+      alt: 'Valdy Lins, fundador da Vmais Comunicação',
+      quote: '"Marketing não é mais sobre o que você faz, mas sobre a história que você conta."'
+    },
+    {
+      name: 'KASSIA JANE',
+      image: '/Images/kassia.png',
+      alt: 'Kassia Jane, fundadora da Vmais Comunicação',
+      quote: '"Comunicação eficiente nasce quando estratégia, sensibilidade e execução caminham juntas."'
+    }
+  ];
+
+  const [activeFounderIndex, setActiveFounderIndex] = useState(0);
+  const activeFounder = founders[activeFounderIndex];
+
+  const handleNextFounder = (event) => {
+    event.stopPropagation();
+    setActiveFounderIndex((currentIndex) => (currentIndex + 1) % founders.length);
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -373,9 +424,9 @@ const AboutUs = () => {
 
             <VisualContent variants={visualVariants}>
               <TiltedCard
-                imageSrc="/Images/file.jpg"
-                altText="Vmais Comunicação"
-                captionText="Vmais Comunicação"
+                imageSrc={activeFounder.image}
+                altText={activeFounder.alt}
+                captionText={activeFounder.name}
                 containerHeight="500px"
                 containerWidth="100%"
                 imageHeight="500px"
@@ -389,12 +440,34 @@ const AboutUs = () => {
                   <TiltedOverlayCard>
                     <OverlayTop>
                       <OverlayBadge>V+</OverlayBadge>
+                      <OverlayControls>
+                        <FounderCounter>
+                          {String(activeFounderIndex + 1).padStart(2, '0')}/{String(founders.length).padStart(2, '0')}
+                        </FounderCounter>
+                        <FounderSwitchButton
+                          type="button"
+                          onClick={handleNextFounder}
+                          aria-label="Alternar fundador em destaque"
+                        >
+                          →
+                        </FounderSwitchButton>
+                      </OverlayControls>
                     </OverlayTop>
                     <OverlayQuoteBox>
-                      <OverlayQuote>
-                        "Marketing não é mais sobre o que você faz, mas sobre a história que você conta."
-                      </OverlayQuote>
-                      <OverlayAuthor>VALDY LINS</OverlayAuthor>
+                      <AnimatePresence mode="wait">
+                        <OverlayFounderInfo
+                          key={activeFounder.name}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.22 }}
+                        >
+                          <OverlayQuote>
+                            {activeFounder.quote}
+                          </OverlayQuote>
+                          <OverlayAuthor>{activeFounder.name}</OverlayAuthor>
+                        </OverlayFounderInfo>
+                      </AnimatePresence>
                     </OverlayQuoteBox>
                   </TiltedOverlayCard>
                 }
