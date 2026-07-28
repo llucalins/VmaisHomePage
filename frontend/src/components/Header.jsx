@@ -163,6 +163,7 @@ const Header = () => {
     { label: 'QUEM SOMOS', target: 'about' },
     { label: 'SOLUÇÕES', target: 'services' },
     { label: 'PORTFÓLIO', target: 'portfolio' },
+    { label: 'BLOG', href: 'https://blog.vmaiscomunicacao.com.br' },
     { label: 'CONTATO', target: 'contact' }
   ];
 
@@ -266,10 +267,12 @@ const Header = () => {
         <MenuItems>
           {menuItems.map((item, index) => (
             <MenuItem 
-              key={item.target}
-              type="button"
+              as={item.href ? 'a' : 'button'}
+              key={item.target || item.href}
+              type={item.href ? undefined : 'button'}
+              href={item.href}
               scrolled={scrolled}
-              onClick={() => scrollToTarget(item.target)}
+              onClick={item.href ? undefined : () => scrollToTarget(item.target)}
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1 + index * 0.1, duration: 0.5 }}
@@ -299,9 +302,11 @@ const Header = () => {
           >
             {menuItems.map((item, index) => (
               <MobileMenuItem 
-                key={item.target}
-                type="button"
-                onClick={() => scrollToTarget(item.target)}
+                as={item.href ? 'a' : 'button'}
+                key={item.target || item.href}
+                type={item.href ? undefined : 'button'}
+                href={item.href}
+                onClick={item.href ? () => setMobileMenuOpen(false) : () => scrollToTarget(item.target)}
                 initial={{ opacity: 0, x: 50 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1, duration: 0.3 }}

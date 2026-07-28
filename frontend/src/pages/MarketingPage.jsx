@@ -4,6 +4,7 @@ import Hero from '../components/Hero';
 import AboutUs from '../components/AboutUs';
 import Services from '../components/Services';
 import CasesResultados from '../components/CasesResultados';
+import BlogSection from '../components/BlogSection';
 import Contact from '../components/Contact';
 import Footer from '../components/Footer';
 
@@ -14,6 +15,7 @@ const MarketingPage = () => (
     <AboutUs />
     <Services />
     <CasesResultados />
+    <BlogSection />
     <Contact />
     <Footer />
   </>
